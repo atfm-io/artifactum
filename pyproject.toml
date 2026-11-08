@@ -1,0 +1,28 @@
+[project]
+name = "artifactum"
+version = "0.1.0"
+description = "A registry and lineage tracker for the files data teams produce"
+readme = "README.md"
+authors = [{name = "Chris Cole", email = "chris.c.1221@gmail.com"}]
+requires-python = ">= 3.11"
+dependencies = [
+    "httpx>=0.27",
+    "typer>=0.12",
+    "rich>=13.0",
+    "google-cloud-storage>=2.0",
+    "textual>=0.70",
+    "tomli-w>=1.0",
+    "pyperclip>=1.8",
+]
+
+[project.scripts]
+artifactum = "artifactum.cli.main:app"
+# Short alias for everyday use
+atfm = "artifactum.cli.main:app"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/artifactum"]
