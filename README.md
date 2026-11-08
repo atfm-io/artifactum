@@ -1,4 +1,6 @@
-# Artifactum
+# Artifactum · `atfm`
+
+[atfm.io](https://atfm.io) · `pip install artifactum` · `import artifactum as atfm` · the `atfm` command
 
 A registry and lineage tracker for the files data teams produce: datasets, models, results and figures.
 
@@ -13,7 +15,9 @@ pip install artifactum
 artifactum init
 ```
 
-`init` asks for your API token (from Settings in the web app), your server URL and your GCS bucket.
+`init` asks for your API token (from Settings at [atfm.io](https://atfm.io)), your server URL (`https://atfm.io`
+unless your team runs its own) and your GCS bucket. `atfm` is the short name for the same command:
+`atfm init`, `atfm search`, and so on.
 
 ## Use
 

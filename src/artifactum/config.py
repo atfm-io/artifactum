@@ -11,7 +11,9 @@ _CONFIG_PATH = CONFIG_DIR / "config.toml"
 # Read when the new config doesn't exist yet, so setups from before the rename keep working
 _LEGACY_CONFIG_PATH = Path.home() / ".dregs" / "config.toml"
 
-DEFAULT_SERVER_URL = "https://dregs.chrisbcole.me"
+DEFAULT_SERVER_URL = "https://atfm.io"
+# Addresses the hosted service used before; configs that saved one are read as the current one
+_OLD_SERVER_URLS = {"https://dregs.chrisbcole.me"}
 DEFAULT_CACHE_DIR = str(CONFIG_DIR / "cache")
 
 
@@ -43,13 +45,17 @@ def load_config(path: Path = _CONFIG_PATH) -> Config:
     section = data.get("default", data)
     return Config(
         api_token=section.get("api_token", ""),
-        server_url=section.get("server_url", DEFAULT_SERVER_URL),
+        server_url=_current_url(section.get("server_url", DEFAULT_SERVER_URL)),
         gcs_bucket=section.get("gcs_bucket", ""),
         cache_dir=section.get("cache_dir", DEFAULT_CACHE_DIR),
         cache_limit_gb=float(section.get("cache_limit_gb", 2.0)),
         capture_code=bool(section.get("capture_code", True)),
         capture_machine=bool(section.get("capture_machine", True)),
     )
+
+
+def _current_url(url: str) -> str:
+    return DEFAULT_SERVER_URL if url.rstrip("/") in _OLD_SERVER_URLS else url
 
 
 def save_config(config: Config, path: Path = _CONFIG_PATH) -> None:

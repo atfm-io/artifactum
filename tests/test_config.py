@@ -47,3 +47,11 @@ def test_falls_back_to_pre_rename_config(tmp_path, monkeypatch):
 
     save_config(Config(api_token="new-token"), new)
     assert cfg.load_config(new).api_token == "new-token"  # the new file wins once it exists
+
+
+def test_old_hosted_address_is_read_as_the_new_one(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text('[default]\napi_token = "t"\nserver_url = "https://dregs.chrisbcole.me/"\n')
+    assert load_config(path).server_url == "https://atfm.io"
+    path.write_text('[default]\napi_token = "t"\nserver_url = "https://registry.acme.internal"\n')
+    assert load_config(path).server_url == "https://registry.acme.internal"
