@@ -15,6 +15,11 @@ dependencies = [
     "pyperclip>=1.8",
 ]
 
+[project.urls]
+Homepage = "https://atfm.io"
+Repository = "https://github.com/atfm-io/artifactum"
+Issues = "https://github.com/atfm-io/artifactum/issues"
+
 [project.scripts]
 artifactum = "artifactum.cli.main:app"
 # Short alias for everyday use
