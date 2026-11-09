@@ -49,6 +49,33 @@ eval "$(atfm run end)"
 `atfm get` prints a local path and `atfm publish` prints the new ID, so both compose with other
 commands. Use `--parent ID` to set parents explicitly.
 
+Add `--json` to `get`, `publish`, `describe`, `log` or `run status` to get one JSON object on stdout
+instead, for tools that parse rather than split strings. Messages and errors stay on stderr, and a
+failure exits non-zero.
+
+```bash
+$ atfm get C4LN9E2A --json
+{"id": "C4LN9E2A", "path": "/home/me/.artifactum/cache/3f9a..."}
+$ atfm publish model.rds -p C4LN9E2A --json
+{"id": "M0DL3V3X", "file": "/home/me/project/model.rds", "parents": ["C4LN9E2A"], "run_id": null}
+```
+
+From R, call the command and read its JSON with `jsonlite`:
+
+```r
+atfm <- function(...) {
+  out <- system2("atfm", c(..., "--json"), stdout = TRUE)
+  if (!is.null(attr(out, "status"))) stop("atfm failed")
+  jsonlite::fromJSON(paste(out, collapse = ""))
+}
+
+counts <- read.csv(atfm("get", "C4LN9E2A")$path)
+saveRDS(fit, "model.rds")
+atfm("publish", "model.rds", "-p", "C4LN9E2A", "-d", shQuote("GLM on cleaned counts"))$id
+```
+
+There's no R package yet. If you'd like one, email hello@atfm.io.
+
 Browsing from the terminal:
 
 ```bash

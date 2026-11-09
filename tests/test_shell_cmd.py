@@ -75,3 +75,49 @@ def test_outside_a_run_publish_hints_how_to_record_parents(tmp_path: Path, fake_
     f.write_text("y")
     result = atfm("publish", str(f))
     assert result.exit_code == 0 and "start a run" in result.stderr
+
+
+# ── --json ───────────────────────────────────────────────────────────────────
+
+import json  # noqa: E402
+
+
+def test_get_and_publish_json(tmp_path: Path, fake_backend, monkeypatch) -> None:  # noqa: F811
+    start = atfm("run", "start", "qc")
+    monkeypatch.setenv("ARTIFACTUM_RUN", start.stdout.strip().split("=", 1)[1])
+    got = atfm("get", "REFGENOM", "--json")
+    assert got.exit_code == 0 and json.loads(got.stdout) == {"id": "REFGENOM", "path": str(tmp_path / "h-REFGENOM")}
+
+    out = tmp_path / "qc.csv"
+    out.write_text("qc")
+    published = atfm("publish", str(out), "--json")
+    assert published.exit_code == 0, published.output
+    body = json.loads(published.stdout)  # stdout is only the JSON; hints stay on stderr
+    assert body["id"] == "OUT00001" and body["file"] == str(out.resolve())
+    assert body["parents"] == ["REFGENOM"] and body["run_id"]
+
+    status = json.loads(atfm("run", "status", "--json").stdout)
+    assert status["name"] == "qc" and status["inputs"] == ["REFGENOM"]
+
+
+def test_publish_json_outside_a_run(tmp_path: Path, fake_backend) -> None:  # noqa: F811
+    f = tmp_path / "z.csv"
+    f.write_text("z")
+    body = json.loads(atfm("publish", str(f), "-p", "PARENT01", "--json").stdout)
+    assert body["parents"] == ["PARENT01"] and body["run_id"] is None
+    assert json.loads(atfm("run", "status", "--json").stdout) == {"run_id": None, "name": None, "started_at": None, "inputs": []}
+
+
+def test_describe_and_log_json(fake_backend, monkeypatch) -> None:  # noqa: F811
+    from tests.test_tracking import FakeClient
+
+    parents = {"CHILD001": [{"id": "PARENT01"}], "PARENT01": []}
+    monkeypatch.setattr(FakeClient, "get_lineage", lambda self, aid: {"parents": parents[aid]}, raising=False)
+    monkeypatch.setattr(FakeClient, "get_run", lambda self, aid: {"name": "make child"}, raising=False)
+
+    described = json.loads(atfm("describe", "CHILD001", "--json").stdout)
+    assert described["id"] == "CHILD001" and described["hash"] == "h-CHILD001" and described["run"] == {"name": "make child"}
+
+    tree = json.loads(atfm("log", "CHILD001", "--json").stdout)
+    assert tree["id"] == "CHILD001" and [p["id"] for p in tree["parents"]] == ["PARENT01"]
+    assert tree["parents"][0]["parents"] == []

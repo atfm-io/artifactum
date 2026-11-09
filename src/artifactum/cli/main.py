@@ -36,13 +36,20 @@ def browse() -> None:
 
 
 @app.command()
-def log(artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)")) -> None:
+def log(
+    artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)"),
+    as_json: bool = shell_cmd.JSON_OPTION,
+) -> None:
     """Print the full upstream lineage chain for an artifact."""
     from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
 
     config = load_config()
     client = ArtifactumClient(config)
+
+    if as_json:
+        shell_cmd.emit_json(_lineage_json(client, artifact_id, set()))
+        return
 
     def _build_tree(aid: str, tree: Tree | None = None, visited: set[str] | None = None) -> Tree:
         if visited is None:
@@ -78,8 +85,13 @@ def log(artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)")
 
 
 @app.command()
-def describe(artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)")) -> None:
+def describe(
+    artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)"),
+    as_json: bool = shell_cmd.JSON_OPTION,
+) -> None:
     """Print detailed metadata for an artifact."""
+    from dataclasses import asdict
+
     from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
 
@@ -87,6 +99,9 @@ def describe(artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHF
     client = ArtifactumClient(config)
 
     meta = client.get_artifact(artifact_id)
+    if as_json:
+        shell_cmd.emit_json({**asdict(meta), "run": client.get_run(artifact_id)})
+        return
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("Field", style="bold")
@@ -160,6 +175,25 @@ def export(
     with console.status("Exporting the registry…"):
         size = ArtifactumClient(load_config()).download_export(dest)
     console.print(f"[green]✓[/green] Saved {dest} ({_fmt_bytes(size)})")
+
+
+def _lineage_json(client, aid: str, visited: set[str]) -> dict:
+    """{id, filename, description, created_at, parents: [...]}, each artifact expanded once."""
+    if aid in visited:
+        return {"id": aid, "seen": True, "parents": []}
+    visited.add(aid)
+    try:
+        meta = client.get_artifact(aid)
+    except Exception as e:
+        return {"id": aid, "error": str(e), "parents": []}
+    parents = client.get_lineage(aid).get("parents", [])
+    return {
+        "id": aid,
+        "filename": meta.gcs_url.rsplit("/", 1)[-1] if meta.gcs_url else None,
+        "description": meta.description,
+        "created_at": meta.created_at,
+        "parents": [_lineage_json(client, p["id"], visited) for p in parents],
+    }
 
 
 def _fmt_bytes(n: int | None) -> str:
