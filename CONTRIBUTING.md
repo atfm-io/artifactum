@@ -33,4 +33,5 @@ follow the same format.
 
 release-please keeps a release PR open that collects unreleased changes, bumps the
 version in `pyproject.toml` and updates `CHANGELOG.md`. Merging that PR tags the release
-(`vX.Y.Z`) and publishes a GitHub release.
+(`vX.Y.Z`), publishes a GitHub release with the built files attached, and uploads the
+package to PyPI.
