@@ -36,6 +36,11 @@ class LineageNode:
     children: list[LineageNode] = field(default_factory=list)
 
 
+def canonical_id(artifact_id: str) -> str:
+    """IDs are 8 uppercase letters and digits; accept them typed in lowercase or with spaces."""
+    return artifact_id.strip().upper()
+
+
 _warned: set[str] = set()
 
 
@@ -120,7 +125,7 @@ class ArtifactumClient:
         if content_type:
             body["content_type"] = content_type
         if parent_ids:
-            body["parent_ids"] = parent_ids
+            body["parent_ids"] = [canonical_id(p) for p in parent_ids]
         if description:
             body["description"] = description
         if tags:
@@ -139,7 +144,7 @@ class ArtifactumClient:
         return data["id"]
 
     def get_artifact(self, artifact_id: str) -> ArtifactMeta:
-        data = self._get(f"/artifacts/{artifact_id}")
+        data = self._get(f"/artifacts/{canonical_id(artifact_id)}")
         return ArtifactMeta(
             id=data["id"],
             hash=data["hash"],
@@ -156,10 +161,10 @@ class ArtifactumClient:
         )
 
     def get_run(self, artifact_id: str) -> dict[str, Any] | None:
-        return self._get(f"/artifacts/{artifact_id}/run").get("run")
+        return self._get(f"/artifacts/{canonical_id(artifact_id)}/run").get("run")
 
     def get_lineage(self, artifact_id: str) -> dict[str, Any]:
-        return self._get(f"/artifacts/{artifact_id}/lineage")
+        return self._get(f"/artifacts/{canonical_id(artifact_id)}/lineage")
 
     def search(self, query: str, tags: list[str] | None = None) -> list[ArtifactMeta]:
         params: dict[str, Any] = {"q": query}
@@ -184,7 +189,7 @@ class ArtifactumClient:
             body["description"] = description
         if tags is not None:
             body["tags"] = tags
-        data = self._patch(f"/artifacts/{artifact_id}", body)
+        data = self._patch(f"/artifacts/{canonical_id(artifact_id)}", body)
         return self._meta(data)
 
     @staticmethod

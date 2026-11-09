@@ -121,3 +121,20 @@ def test_describe_and_log_json(fake_backend, monkeypatch) -> None:  # noqa: F811
     tree = json.loads(atfm("log", "CHILD001", "--json").stdout)
     assert tree["id"] == "CHILD001" and [p["id"] for p in tree["parents"]] == ["PARENT01"]
     assert tree["parents"][0]["parents"] == []
+
+
+def test_ids_are_accepted_in_lowercase(tmp_path: Path, monkeypatch) -> None:
+    from artifactum.client import ArtifactumClient, canonical_id
+
+    assert canonical_id(" xbhfal3r ") == "XBHFAL3R"
+    seen: list[str] = []
+    client = ArtifactumClient.__new__(ArtifactumClient)
+    monkeypatch.setattr(client, "_get", lambda path, **kw: seen.append(path) or {}, raising=False)
+    client.get_lineage("xbhfal3r")
+    client.get_run("xbhfal3r")
+    assert seen == ["/artifacts/XBHFAL3R/lineage", "/artifacts/XBHFAL3R/run"]
+
+    posted: list[dict] = []
+    monkeypatch.setattr(client, "_post", lambda path, body: posted.append(body) or {"id": "OUT00001"}, raising=False)
+    client.register_artifact(hash="h", gcs_url="gs://b/x", size_bytes=1, parent_ids=["parent01"])
+    assert posted[0]["parent_ids"] == ["PARENT01"]
