@@ -30,7 +30,7 @@ def init() -> None:
 
 @app.command()
 def browse() -> None:
-    """Open the interactive TUI for artifact discovery and lineage browsing."""
+    """Preview: browse your 20 most recent artifacts in the terminal (work in progress)."""
     from artifactum.cli.tui import run_browse
     run_browse()
 

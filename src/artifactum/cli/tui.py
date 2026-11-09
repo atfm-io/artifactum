@@ -94,6 +94,9 @@ class ArtifactumApp(App):
     }
     """
 
+    TITLE = "Artifactum"
+    SUB_TITLE = "Preview: work in progress. Use the web app to search and trace lineage."
+
     BINDINGS = [
         Binding("e", "edit_description", "Edit description"),
         Binding("t", "edit_tags", "Edit tags"),
@@ -126,6 +129,8 @@ class ArtifactumApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
+        self.notify("The terminal browser is a preview: it shows your 20 most recent artifacts and has no search yet.",
+                    title="Work in progress", timeout=6)
         self._load_artifacts()
 
     def on_tabs_tab_activated(self, event: Tabs.TabActivated) -> None:

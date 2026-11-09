@@ -80,6 +80,6 @@ Browsing from the terminal:
 
 ```bash
 artifactum log K9PWQM7T      # upstream lineage
-artifactum browse            # interactive browser
+artifactum browse            # interactive browser (preview: recent artifacts, no search yet)
 atfm log K9PWQM7T            # `atfm` is a short alias for `artifactum`
 ```
