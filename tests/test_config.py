@@ -11,7 +11,7 @@ def test_round_trip(tmp_path: Path) -> None:
     config = Config(
         api_token="atfm_live_abc",
         server_url="https://artifactum.example.com",
-        gcs_bucket="gs://my-bucket/artifactum",
+        storage="gs://my-bucket/artifactum",
         cache_dir=str(tmp_path / "cache"),
         cache_limit_gb=5.0,
     )
@@ -20,7 +20,7 @@ def test_round_trip(tmp_path: Path) -> None:
 
     assert loaded.api_token == "atfm_live_abc"
     assert loaded.server_url == "https://artifactum.example.com"
-    assert loaded.gcs_bucket == "gs://my-bucket/artifactum"
+    assert loaded.storage == "gs://my-bucket/artifactum"
     assert loaded.cache_limit_gb == 5.0
 
 
@@ -55,3 +55,9 @@ def test_old_hosted_address_is_read_as_the_new_one(tmp_path: Path) -> None:
     assert load_config(path).server_url == "https://atfm.io"
     path.write_text('[default]\napi_token = "t"\nserver_url = "https://registry.acme.internal"\n')
     assert load_config(path).server_url == "https://registry.acme.internal"
+
+
+def test_a_config_from_before_local_storage_keeps_its_bucket(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text('[default]\napi_token = "t"\ngcs_bucket = "gs://lab/atfm"\n')
+    assert load_config(path).storage == "gs://lab/atfm"

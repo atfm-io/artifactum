@@ -8,7 +8,7 @@ def _config(tmp_path: Path, limit_gb: float = 1.0) -> Config:
     return Config(
         api_token="",
         server_url="",
-        gcs_bucket="",
+        storage="",
         cache_dir=str(tmp_path / "cache"),
         cache_limit_gb=limit_gb,
     )
@@ -48,7 +48,7 @@ def test_eviction(tmp_path: Path) -> None:
     config = Config(
         api_token="",
         server_url="",
-        gcs_bucket="",
+        storage="",
         cache_dir=str(tmp_path / "cache"),
         cache_limit_gb=limit_bytes / 1024**3,
     )

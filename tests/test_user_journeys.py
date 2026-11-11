@@ -18,6 +18,9 @@ from artifactum.exceptions import ArtifactNotFoundError, ArtifactumError, AuthEr
 from tests.conftest import Registry
 from tests.fakes import atfm
 
+# Every journey runs twice: files in a Google Cloud Storage bucket, and in a shared directory
+pytestmark = pytest.mark.parametrize("registry", ["gcs", "local"], indirect=True)
+
 
 def write(path: Path, text: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -43,13 +46,13 @@ def test_a_teammate_reads_what_was_published(registry: Registry, tmp_path: Path)
     assert path.is_relative_to(tmp_path / "teammate-cache")
 
     assert artifactum.artifact(artifact_id) == str(path)
-    assert registry.bucket.downloads == 1  # the second read hit the cache
+    assert registry.downloads == 1  # the second read hit the cache
 
 
 def test_a_corrupted_download_is_rejected_and_not_cached(registry: Registry, tmp_path: Path) -> None:
     artifact_id = artifactum.publish(write(tmp_path / "model.pkl", "weights"))
     registry.configure(cache_dir=str(tmp_path / "other-cache"))
-    registry.bucket.path(registry.server.artifacts[artifact_id]["gcs_url"]).write_text("tampered")
+    registry.stored(registry.server.artifacts[artifact_id]["gcs_url"]).write_text("tampered")
 
     with pytest.raises(ArtifactNotFoundError):
         artifactum.artifact(artifact_id)
@@ -117,7 +120,7 @@ def test_turning_off_code_capture_uploads_no_code(registry: Registry, tmp_path: 
     out = atfm("publish", str(write(tmp_path / "x.csv", "x")), "--code", str(write(tmp_path / "make.py", "print()")))
     run = next(iter(registry.server.runs.values()))
     assert out.exit_code == 0 and "code_url" not in run
-    assert not list(registry.bucket.root.rglob("make.py"))
+    assert not list(registry.store_root.rglob("make.py"))
 
 
 # ── When things go wrong ─────────────────────────────────────────────────────────
@@ -147,7 +150,7 @@ def test_reaching_the_plan_limit_explains_how_to_upgrade(registry: Registry, tmp
 
     result = atfm("publish", str(tmp_path / "b.csv"))
     assert result.exit_code == 1 and "Free plan's limit" in result.stderr
-    assert registry.server.publish_count() == 1 and not list(registry.bucket.root.rglob("b.csv"))
+    assert registry.server.publish_count() == 1 and not list(registry.store_root.rglob("b.csv"))
 
 
 def test_the_server_being_down_is_reported(registry: Registry, tmp_path: Path) -> None:
@@ -184,76 +187,3 @@ def test_export_downloads_the_whole_registry(registry: Registry, tmp_path: Path)
 
     registry.configure(api_token="atfm_revoked")
     assert atfm("export", "-o", str(tmp_path / "again.zip")).exit_code == 1
-
-
-# ── First-time setup ─────────────────────────────────────────────────────────────
-
-
-def test_init_writes_the_config_and_keeps_the_token_on_a_rerun(tmp_path: Path, monkeypatch) -> None:
-    from artifactum.cli import init_cmd
-    from artifactum.config import load_config, save_config
-
-    config_path = tmp_path / ".artifactum" / "config.toml"
-    monkeypatch.setattr(init_cmd, "_CONFIG_PATH", config_path)
-    monkeypatch.setattr(init_cmd, "load_config", lambda: load_config(config_path))
-    monkeypatch.setattr(init_cmd, "save_config", lambda c: save_config(c, config_path))
-
-    def answer(answers: dict[str, str]):
-        def ask(prompt: str, default: str | None = None, password: bool = False) -> str:
-            for start, value in answers.items():
-                if prompt.startswith(start):
-                    return value if value != "<default>" else (default or "")
-            raise AssertionError(f"unexpected prompt {prompt!r}")
-
-        return ask
-
-    cache = tmp_path / "cache"
-    monkeypatch.setattr(
-        init_cmd.Prompt,
-        "ask",
-        answer(
-            {
-                "Server URL": "<default>",
-                "API token": "atfm_first",
-                "GCS bucket": "gs://lab/atfm",
-                "Local cache directory": str(cache),
-                "Cache size limit": "5",
-            }
-        ),
-    )
-    assert atfm("init").exit_code == 0
-    config = load_config(config_path)
-    assert (config.server_url, config.api_token, config.gcs_bucket, config.cache_limit_gb) == (
-        "https://atfm.io",
-        "atfm_first",
-        "gs://lab/atfm",
-        5.0,
-    )
-    assert cache.is_dir()
-
-    # Re-running to change the bucket: an empty token keeps the saved one; a bad size falls back
-    monkeypatch.setattr(
-        init_cmd.Prompt,
-        "ask",
-        answer(
-            {
-                "Server URL": "<default>",
-                "API token": "",
-                "GCS bucket": "gs://lab/new",
-                "Local cache directory": "<default>",
-                "Cache size limit": "lots",
-            }
-        ),
-    )
-    atfm("init")
-    config = load_config(config_path)
-    assert (config.api_token, config.gcs_bucket, config.cache_limit_gb) == ("atfm_first", "gs://lab/new", 2.0)
-
-
-def test_commands_before_setup_say_to_run_init(tmp_path: Path, monkeypatch) -> None:
-    from artifactum import config as config_mod
-
-    real_load = config_mod.load_config
-    monkeypatch.setattr(config_mod, "load_config", lambda: real_load(tmp_path / "missing.toml"))
-    result = atfm("describe", "ART00001")
-    assert result.exit_code == 1 and "atfm init" in result.stderr

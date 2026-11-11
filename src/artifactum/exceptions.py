@@ -22,3 +22,7 @@ class PlanLimitError(ArtifactumError):
     def __init__(self, message: str, upgrade_url: str | None = None):
         self.upgrade_url = upgrade_url
         super().__init__(message)
+
+
+class StorageError(ArtifactumError):
+    """A file couldn't be stored or fetched: the location is missing, unreadable or misconfigured."""

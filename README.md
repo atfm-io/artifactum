@@ -5,8 +5,8 @@
 A registry and lineage tracker for the files data teams produce: datasets, models, results and figures.
 
 Every file you publish gets a permanent ID, and Artifactum records where it came from: the artifacts your
-code read, the git commit and code that ran, and who published it. Files stay in your own Google Cloud
-Storage bucket; Artifactum stores only metadata.
+code read, the git commit and code that ran, and who published it. Files stay in storage your team
+controls, a shared directory or a Google Cloud Storage bucket; Artifactum stores only metadata.
 
 ## Install
 
@@ -16,8 +16,24 @@ atfm init
 ```
 
 `init` asks for your API token (from Settings at [atfm.io](https://atfm.io)), your server URL (`https://atfm.io`
-unless your team runs its own) and your GCS bucket. `atfm` is the short name for the same command:
-`atfm init`, `atfm get`, and so on.
+unless your team runs its own) and where to store files.
+
+## Storage
+
+Artifactum never holds your files. Each one is copied to your team's storage when it's published and
+fetched from there when someone reads it, then cached locally.
+
+| Storage | Location to give `init` | Install |
+| --- | --- | --- |
+| A shared directory (lab server, cluster, network drive) | `/groups/lab/atfm` | `pip install artifactum` |
+| Google Cloud Storage | `gs://my-team-bucket/atfm` | `pip install 'artifactum[gcs]'` |
+
+A shared directory needs no cloud account: everyone on the team just needs to reach it **at the same
+path**, since the registry records where each file is. Files are stored by content, under
+`<location>/<hash[:2]>/<hash>/<filename>`, and never overwritten.
+
+For Google Cloud Storage, each person signs in once with `gcloud auth application-default login` and needs
+read and write access to the bucket.
 
 ## Use
 

@@ -43,11 +43,12 @@ class FakeClient:
 @pytest.fixture
 def fake_backend(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     FakeClient.registered = []
-    config = Config(api_token="t", server_url="http://x", gcs_bucket="gs://bucket", cache_dir=str(tmp_path / "c"))
+    config = Config(api_token="t", server_url="http://x", storage="gs://bucket", cache_dir=str(tmp_path / "c"))
     uploads: list[str] = []
     monkeypatch.setattr("artifactum.client.ArtifactumClient", FakeClient)
     monkeypatch.setattr("artifactum.config.load_config", lambda: config)
-    monkeypatch.setattr("artifactum.gcs.upload", lambda local, url: uploads.append(url))
+    monkeypatch.setattr("artifactum.storage.GCSStorage.check", lambda self: None)
+    monkeypatch.setattr("artifactum.storage.GCSStorage.upload", lambda self, local, url: uploads.append(url))
     # Cache hit for every artifact, so artifact() never downloads
     monkeypatch.setattr("artifactum.cache.Cache.get", lambda self, h: tmp_path / h)
     return FakeClient.registered

@@ -21,7 +21,8 @@ DEFAULT_CACHE_DIR = str(CONFIG_DIR / "cache")
 class Config:
     api_token: str = ""
     server_url: str = DEFAULT_SERVER_URL
-    gcs_bucket: str = ""
+    # Where files are stored: a directory (usually shared) or gs://bucket/prefix
+    storage: str = ""
     cache_dir: str = DEFAULT_CACHE_DIR
     cache_limit_gb: float = 2.0
     # Upload a snapshot of the running script/notebook to the bucket on publish
@@ -46,7 +47,7 @@ def load_config(path: Path = _CONFIG_PATH) -> Config:
     return Config(
         api_token=section.get("api_token", ""),
         server_url=_current_url(section.get("server_url", DEFAULT_SERVER_URL)),
-        gcs_bucket=section.get("gcs_bucket", ""),
+        storage=section.get("storage") or section.get("gcs_bucket", ""),  # gcs_bucket: the old name
         cache_dir=section.get("cache_dir", DEFAULT_CACHE_DIR),
         cache_limit_gb=float(section.get("cache_limit_gb", 2.0)),
         capture_code=bool(section.get("capture_code", True)),
@@ -66,7 +67,7 @@ def save_config(config: Config, path: Path = _CONFIG_PATH) -> None:
         "default": {
             "api_token": config.api_token,
             "server_url": config.server_url,
-            "gcs_bucket": config.gcs_bucket,
+            "storage": config.storage,
             "cache_dir": config.cache_dir,
             "cache_limit_gb": config.cache_limit_gb,
             "capture_code": config.capture_code,

@@ -7,11 +7,14 @@ import logging
 import mimetypes
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from artifactum.client import ArtifactMeta
 from artifactum.exceptions import ArtifactNotFoundError, PlanLimitError
 from artifactum.tracking import current_scope, record_input, step
+
+if TYPE_CHECKING:
+    from artifactum.storage import Storage
 
 __all__ = ["artifact", "publish", "search", "step", "PlanLimitError"]
 
@@ -21,20 +24,13 @@ log = logging.getLogger("artifactum")
 _uploaded_code: set[str] = set()
 
 
-def _gcs_dest(gcs_bucket: str, content_hash: str, filename: str) -> str:
-    bucket = gcs_bucket.rstrip("/")
-    if not bucket.startswith("gs://"):
-        bucket = f"gs://{bucket}"
-    return f"{bucket}/{content_hash[:2]}/{content_hash}/{filename}"
-
-
 def artifact(id: str) -> str:
-    """Resolve an artifact ID to a local file path, fetching from GCS if needed."""
+    """Resolve an artifact ID to a local file path, fetching it from storage if needed."""
     from artifactum.cache import Cache
     from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
-    from artifactum.gcs import download
     from artifactum.hashing import sha256_file
+    from artifactum.storage import storage_for
 
     config = load_config()
     client = ArtifactumClient(config)
@@ -59,7 +55,7 @@ def artifact(id: str) -> str:
         tmp_path = Path(tmp.name)
 
     try:
-        download(meta.gcs_url, tmp_path)
+        storage_for(meta.gcs_url).download(meta.gcs_url, tmp_path)
         actual_hash = sha256_file(tmp_path)
         if actual_hash != meta.hash:
             tmp_path.unlink(missing_ok=True)
@@ -113,11 +109,13 @@ def _publish(
     captured Python environment and ``code_path`` is snapshotted instead of the running script."""
     from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
-    from artifactum.gcs import upload
     from artifactum.hashing import sha256_file
+    from artifactum.storage import storage_for
 
     config = load_config()
     client = ArtifactumClient(config)
+    storage = storage_for(config.storage)
+    storage.check()  # before registering, so a bad location doesn't leave a record with no file
     scope = current_scope()
 
     if parents is None and parent is None:
@@ -129,16 +127,16 @@ def _publish(
     content_hash = sha256_file(local)
     size_bytes = local.stat().st_size
     content_type, _ = mimetypes.guess_type(local.name)
-    gcs_url = _gcs_dest(config.gcs_bucket, content_hash, local.name)
+    url = storage.url_for(content_hash, local.name)
 
     docs_text = _read_docs(docs)
 
     # The first publish in a scope sends the full run record; later ones just reference it.
-    run = None if scope.run_registered else _capture_run(scope, config, environment, code_path)
+    run = None if scope.run_registered else _capture_run(scope, config, storage, environment, code_path)
 
     artifact_id = client.register_artifact(
         hash=content_hash,
-        gcs_url=gcs_url,
+        gcs_url=url,
         size_bytes=size_bytes,
         content_type=content_type,
         parent_ids=parent_ids,
@@ -151,7 +149,7 @@ def _publish(
     )
     scope.mark_registered()
 
-    upload(local, gcs_url)
+    storage.upload(local, url)
     return artifact_id
 
 
@@ -167,10 +165,13 @@ def _read_docs(docs: str | Path | None) -> str | None:
 
 
 def _capture_run(
-    scope: Any, config: Any, environment: dict[str, Any] | None = None, code_path: Path | None = None
+    scope: Any,
+    config: Any,
+    storage: Storage,
+    environment: dict[str, Any] | None = None,
+    code_path: Path | None = None,
 ) -> dict[str, Any]:
     """Describe the code and environment behind this scope. Never raises."""
-    from artifactum.gcs import upload
     from artifactum.provenance import MACHINE_FIELDS, CodeSnapshot, capture_environment, code_snapshot
 
     run: dict[str, Any] = {"name": scope.name, "started_at": scope.started_at.isoformat()}
@@ -194,12 +195,12 @@ def _capture_run(
         )
         if snapshot is not None:
             code_hash = hashlib.sha256(snapshot.content).hexdigest()
-            code_url = _gcs_dest(config.gcs_bucket, code_hash, snapshot.filename)
+            code_url = storage.url_for(code_hash, snapshot.filename)
             if code_url not in _uploaded_code:
                 with tempfile.NamedTemporaryFile(delete=False) as tmp:
                     tmp.write(snapshot.content)
                 try:
-                    upload(Path(tmp.name), code_url)
+                    storage.upload(Path(tmp.name), code_url)
                 finally:
                     Path(tmp.name).unlink(missing_ok=True)
                 _uploaded_code.add(code_url)

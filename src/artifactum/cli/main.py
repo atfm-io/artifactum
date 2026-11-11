@@ -15,12 +15,13 @@ from rich.tree import Tree
 # Shell use: atfm get / atfm publish / atfm run (see shell_cmd.py)
 from artifactum.cli import shell_cmd
 from artifactum.exceptions import ArtifactumError
+from artifactum.storage import where
 
 console = Console()
 
 
 def init() -> None:
-    """Set up Artifactum for the first time (API token, GCS bucket, cache)."""
+    """Set up Artifactum for the first time (API token, storage location, cache)."""
     from artifactum.cli.init_cmd import run_init
 
     run_init()
@@ -94,7 +95,7 @@ def describe(artifact_id: str, as_json: bool = False) -> None:
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("Field", style="bold")
-    table.add_column("Value")
+    table.add_column("Value", overflow="fold")  # wrap long paths rather than cut them off
 
     filename = meta.gcs_url.rsplit("/", 1)[-1] if meta.gcs_url else artifact_id
 
@@ -105,7 +106,7 @@ def describe(artifact_id: str, as_json: bool = False) -> None:
     table.add_row("Size", _fmt_bytes(meta.size_bytes))
     table.add_row("Type", meta.content_type or "—")
     table.add_row("Published", meta.created_at or "—")
-    table.add_row("GCS URL", meta.gcs_url)
+    table.add_row("Stored at", where(meta.gcs_url))
     table.add_row("Hash", meta.hash)
 
     run = client.get_run(artifact_id)
@@ -119,13 +120,13 @@ def describe(artifact_id: str, as_json: bool = False) -> None:
             )
         if run.get("argv"):
             table.add_row("Args", " ".join(run["argv"]))
-        where = " on ".join(
+        machine = " on ".join(
             x for x in (run.get("python_version") and f"Python {run['python_version']}", run.get("hostname")) if x
         )
-        if where:  # shell runs have no Python version; with capture_machine off there's no hostname
-            table.add_row("Environment", where)
+        if machine:  # shell runs have no Python version; with capture_machine off there's no hostname
+            table.add_row("Environment", machine)
         if run.get("code_url"):
-            table.add_row("Code", f"{run['code_url']}  (atfm code {artifact_id})")
+            table.add_row("Code", f"{where(run['code_url'])}  (atfm code {artifact_id})")
 
     console.print(table)
 
@@ -138,7 +139,7 @@ def code(artifact_id: str) -> None:
 
     from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
-    from artifactum.gcs import download
+    from artifactum.storage import storage_for
 
     client = ArtifactumClient(load_config())
     run = client.get_run(artifact_id)
@@ -148,7 +149,7 @@ def code(artifact_id: str) -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         local = Path(tmp) / "code.py"
-        download(run["code_url"], local)
+        storage_for(run["code_url"]).download(run["code_url"], local)
         console.print(Syntax(local.read_text(), "python", line_numbers=True))
 
 

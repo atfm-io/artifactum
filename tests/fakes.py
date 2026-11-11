@@ -123,19 +123,12 @@ class FakeServer:
 
 
 class FakeBucket:
-    """Stands in for google.cloud.storage: objects are files under `root`."""
+    """Stands in for a google.cloud.storage Client: objects are files under `root`."""
 
     def __init__(self, root: Path):
         self.root = root
-        self.downloads = 0
 
-    def path(self, gcs_url: str) -> Path:
-        return self.root / gcs_url.removeprefix("gs://")
-
-    # The parts of storage.Client that artifactum.gcs uses
-    def __call__(self) -> FakeBucket:
-        return self
-
+    # The parts of storage.Client that GCSStorage uses
     def bucket(self, name: str) -> _Bucket:
         return _Bucket(self, name)
 
@@ -159,8 +152,13 @@ class _Blob:
         shutil.copyfile(filename, self.path)
 
     def download_to_filename(self, filename: str) -> None:
-        self.store.downloads += 1
+        if not self.path.is_file():
+            raise NotFound(str(self.path))
         shutil.copyfile(self.path, filename)
+
+
+class NotFound(Exception):
+    """Named like google.api_core.exceptions.NotFound, which is what GCSStorage looks for."""
 
 
 # ── Running the CLI ──────────────────────────────────────────────────────────────

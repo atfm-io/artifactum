@@ -14,6 +14,7 @@ from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, St
 
 from artifactum.client import ArtifactMeta, ArtifactumClient
 from artifactum.config import load_config
+from artifactum.storage import where
 
 
 def _age(dt_str: str | None) -> str:
@@ -235,8 +236,8 @@ class ArtifactumApp(App):
             f"[bold]Type:[/bold]        {a.content_type or '—'}\n"
             f"[bold]File:[/bold]        {filename}\n"
             f"[bold]Published:[/bold]   {a.created_at or '—'}\n\n"
-            f"[bold]GCS URL:[/bold]     {a.gcs_url}\n\n"
-            f"[dim]\\[e] description  \\[t] tags  \\[y] copy ID  \\[o] GCS path[/dim]"
+            f"[bold]Stored at:[/bold]   {where(a.gcs_url)}\n\n"
+            f"[dim]\\[e] description  \\[t] tags  \\[y] copy ID  \\[o] location[/dim]"
         )
         self.query_one("#detail", Static).update(detail)
 
@@ -298,7 +299,7 @@ class ArtifactumApp(App):
 
     def action_open_artifact(self) -> None:
         if self._selected:
-            self.notify(f"GCS: {self._selected.gcs_url}")
+            self.notify(where(self._selected.gcs_url))
 
 
 def run_browse() -> None:
