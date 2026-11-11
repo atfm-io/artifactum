@@ -12,7 +12,7 @@ Storage bucket; Artifactum stores only metadata.
 
 ```bash
 pip install artifactum
-artifactum init
+atfm init
 ```
 
 `init` asks for your API token (from Settings at [atfm.io](https://atfm.io)), your server URL (`https://atfm.io`
@@ -79,7 +79,6 @@ There's no R package yet. If you'd like one, email hello@atfm.io.
 Browsing from the terminal:
 
 ```bash
-artifactum log K9PWQM7T      # upstream lineage
-artifactum browse            # interactive browser (preview: recent artifacts, no search yet)
-atfm log K9PWQM7T            # `atfm` is a short alias for `artifactum`
+atfm log K9PWQM7T      # upstream lineage
+atfm browse            # interactive browser (preview: recent artifacts, no search yet)
 ```

@@ -117,7 +117,7 @@ def describe(artifact_id: str, as_json: bool = False) -> None:
             table.add_row("Args", " ".join(run["argv"]))
         table.add_row("Environment", f"Python {run.get('python_version')} on {run.get('hostname')}")
         if run.get("code_url"):
-            table.add_row("Code", f"{run['code_url']}  (artifactum code {artifact_id})")
+            table.add_row("Code", f"{run['code_url']}  (atfm code {artifact_id})")
 
     console.print(table)
 

@@ -24,8 +24,6 @@ Repository = "https://github.com/atfm-io/artifactum"
 Issues = "https://github.com/atfm-io/artifactum/issues"
 
 [project.scripts]
-artifactum = "artifactum.cli.main:main"
-# Short alias for everyday use
 atfm = "artifactum.cli.main:main"
 
 [build-system]

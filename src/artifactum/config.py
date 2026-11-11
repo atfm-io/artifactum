@@ -39,7 +39,7 @@ def load_config(path: Path = _CONFIG_PATH) -> Config:
     if not path.exists() and path == _CONFIG_PATH and _LEGACY_CONFIG_PATH.exists():
         path = _LEGACY_CONFIG_PATH
     if not path.exists():
-        raise ConfigError(f"No config found at {path}. Run `artifactum init` to set up.")
+        raise ConfigError(f"No config found at {path}. Run `atfm init` to set up.")
     with open(path, "rb") as f:
         data = tomllib.load(f)
     section = data.get("default", data)

@@ -1,4 +1,4 @@
-"""artifactum browse — Two-panel Textual TUI for artifact discovery."""
+"""atfm browse — Two-panel Textual TUI for artifact discovery."""
 
 from __future__ import annotations
 
