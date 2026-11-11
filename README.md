@@ -16,7 +16,11 @@ atfm init
 ```
 
 `init` asks for your API token (from Settings at [atfm.io](https://atfm.io)), your server URL (`https://atfm.io`
-unless your team runs its own) and where to store files.
+unless your team runs its own) and where to store files. Or give them and skip the questions:
+
+```bash
+atfm init --token atfm_... --storage ~/atfm-files
+```
 
 ## Storage
 
@@ -34,6 +38,14 @@ path**, since the registry records where each file is. Files are stored by conte
 
 For Google Cloud Storage, each person signs in once with `gcloud auth application-default login` and needs
 read and write access to the bucket.
+
+To try Artifactum on your own, a folder like `~/atfm-files` is enough. When you bring in your team, move
+what you've published to shared storage; the files are copied, checked against their hashes and their
+records updated, and the old copies are left in place:
+
+```bash
+atfm storage move /groups/lab/atfm      # or gs://my-team-bucket/atfm
+```
 
 ## Use
 

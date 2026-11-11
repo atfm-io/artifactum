@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from artifactum.exceptions import ConfigError
@@ -23,7 +23,7 @@ class Config:
     server_url: str = DEFAULT_SERVER_URL
     # Where files are stored: a directory (usually shared) or gs://bucket/prefix
     storage: str = ""
-    cache_dir: str = DEFAULT_CACHE_DIR
+    cache_dir: str = field(default_factory=lambda: DEFAULT_CACHE_DIR)
     cache_limit_gb: float = 2.0
     # Upload a snapshot of the running script/notebook to the bucket on publish
     capture_code: bool = True
@@ -36,7 +36,11 @@ class Config:
         return Path(self.cache_dir).expanduser()
 
 
-def load_config(path: Path = _CONFIG_PATH) -> Config:
+# Paths are looked up when called, not bound as defaults at import, so tests can redirect them
+
+
+def load_config(path: Path | None = None) -> Config:
+    path = path or _CONFIG_PATH
     if not path.exists() and path == _CONFIG_PATH and _LEGACY_CONFIG_PATH.exists():
         path = _LEGACY_CONFIG_PATH
     if not path.exists():
@@ -59,9 +63,10 @@ def _current_url(url: str) -> str:
     return DEFAULT_SERVER_URL if url.rstrip("/") in _OLD_SERVER_URLS else url
 
 
-def save_config(config: Config, path: Path = _CONFIG_PATH) -> None:
+def save_config(config: Config, path: Path | None = None) -> None:
     import tomli_w  # imported lazily: only `init` writes config
 
+    path = path or _CONFIG_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "default": {

@@ -20,11 +20,36 @@ from artifactum.storage import where
 console = Console()
 
 
-def init() -> None:
-    """Set up Artifactum for the first time (API token, storage location, cache)."""
+def init(token: str | None = None, storage: str | None = None, server: str | None = None) -> None:
+    """Set up Artifactum: your API token, where files are stored, and the local cache."""
     from artifactum.cli.init_cmd import run_init
 
-    run_init()
+    run_init(token=token, storage=storage, server=server)
+
+
+def storage_move(location: str) -> None:
+    """Copy the files you've published to new storage, and point their records there."""
+    from dataclasses import replace
+
+    from artifactum.client import ArtifactumClient
+    from artifactum.config import load_config, save_config
+    from artifactum.storage import normalise_location
+    from artifactum.storage.move import move_files
+
+    config = load_config()
+    with console.status("Copying your files…") as status:
+        moved = move_files(
+            ArtifactumClient(config),
+            config.storage,
+            location,
+            on_file=lambda url: status.update(f"Copied {url.rsplit('/', 1)[-1]}"),
+        )
+    save_config(replace(config, storage=normalise_location(location)))
+    console.print(
+        f"[green]✓[/green] Moved {moved.artifacts} artifact{'s' * (moved.artifacts != 1)} and {moved.code} code"
+        f" snapshot{'s' * (moved.code != 1)} to {moved.new}, and new files will go there too."
+    )
+    console.print(f"  The old copies in {moved.old} are untouched; delete them once you're happy.")
 
 
 def browse() -> None:
@@ -226,6 +251,7 @@ COMMANDS: dict[str, Callable] = {
     "run end": shell_cmd.run_end,
     "run status": shell_cmd.run_status,
     "init": init,
+    "storage move": storage_move,
     "browse": browse,
     "log": log,
     "describe": describe,
@@ -261,7 +287,17 @@ def build_parser() -> ArgumentParser:
     _command(actions, "end", shell_cmd.run_end)
     _json(_command(actions, "status", shell_cmd.run_status))
 
-    _command(commands, "init", init)
+    p = _command(commands, "init", init)
+    p.add_argument("--token", help="Your API token (from Settings on the website); skips the questions with --storage")
+    p.add_argument("--storage", help="Where files are stored: a directory (e.g. ~/atfm-files) or gs://bucket/path")
+    p.add_argument("--server", help="Server URL, if your team runs its own (default: https://atfm.io)")
+
+    storage = ArgumentParser(description="Manage where your files are stored.")
+    commands.add_subcommand("storage", storage, help="Manage where your files are stored.")
+    moves = storage.add_subcommands(dest="action")
+    _command(moves, "move", storage_move).add_argument(
+        "location", help="The new location: a directory (e.g. /groups/lab/atfm) or gs://bucket/path"
+    )
     _command(commands, "browse", browse)
     for name, fn in (("log", log), ("describe", describe)):
         p = _command(commands, name, fn)
@@ -279,12 +315,12 @@ def main(argv: list[str] | None = None) -> None:
 
     argv = sys.argv[1:] if argv is None else argv
     parser = build_parser()
-    if argv in ([], ["run"]):  # a bare group: show what's in it
+    if argv in ([], ["run"], ["storage"]):  # a bare group: show what's in it
         parser.parse_args([*argv, "--help"])
     cfg = parser.parse_args(argv)
     name, args = cfg.command, cfg[cfg.command]
-    if name == "run":
-        name, args = f"run {args.action}", args[args.action]
+    if name in ("run", "storage"):
+        name, args = f"{name} {args.action}", args[args.action]
     kwargs = args.as_dict() if args else {}
     # File arguments arrive as jsonargparse paths (checked to exist); commands take pathlib paths
     kwargs = {k: Path(v) if isinstance(v, ParsedPath) else v for k, v in kwargs.items()}

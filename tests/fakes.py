@@ -74,6 +74,13 @@ class FakeServer:
                 z.writestr("artifacts.json", json.dumps(list(self.artifacts.values())))
             return httpx.Response(200, content=buf.getvalue())
 
+        if method == "GET" and path == "/artifacts/storage/files":
+            root = request.url.params["prefix"].rstrip("/") + "/"
+            return httpx.Response(200, json=self._files_under(root))
+        if method == "POST" and path == "/artifacts/storage/move":
+            body = json.loads(request.content)
+            return httpx.Response(200, json=self._move(body["from_prefix"], body["to_prefix"]))
+
         m = re.fullmatch(r"/artifacts/([A-Z0-9]{8})(/run|/lineage)?", path)
         if not m or m.group(1) not in self.artifacts:
             return httpx.Response(404, json={"detail": "Not found"})
@@ -85,6 +92,30 @@ class FakeServer:
         if method == "PATCH":
             a.update(json.loads(request.content))
         return httpx.Response(200, json=self._view(a))
+
+    # ── Moving storage (every artifact here belongs to the caller) ──────────────────
+    def _code_under(self, root: str) -> list[dict[str, Any]]:
+        return [r for r in self.runs.values() if (r.get("code_url") or "").startswith(root)]
+
+    def _files_under(self, root: str) -> dict[str, Any]:
+        return {
+            "artifacts": [
+                {"id": a["id"], "hash": a["hash"], "url": a["gcs_url"]}
+                for a in self.artifacts.values()
+                if a["gcs_url"].startswith(root)
+            ],
+            "code": [{"hash": r["code_hash"], "url": r["code_url"]} for r in self._code_under(root)],
+        }
+
+    def _move(self, old: str, new: str) -> dict[str, int]:
+        old, new = old.rstrip("/") + "/", new.rstrip("/") + "/"
+        moved = [a for a in self.artifacts.values() if a["gcs_url"].startswith(old)]
+        for a in moved:
+            a["gcs_url"] = new + a["gcs_url"].removeprefix(old)
+        runs = self._code_under(old)
+        for r in runs:
+            r["code_url"] = new + r["code_url"].removeprefix(old)
+        return {"artifacts": len(moved), "code": len(runs)}
 
     def _register(self, body: dict[str, Any]) -> httpx.Response:
         if self.artifact_limit is not None and self.publish_count() >= self.artifact_limit:

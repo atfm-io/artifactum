@@ -34,6 +34,20 @@ class Registry:
         save_config(config, self.config_path)
 
 
+@pytest.fixture(autouse=True)
+def isolated_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Every test gets its own ~/.artifactum, so nothing reads or writes the real one."""
+    from artifactum import config as config_mod
+    from artifactum.cli import init_cmd
+
+    home = tmp_path / "home" / ".artifactum"
+    monkeypatch.setattr(config_mod, "_CONFIG_PATH", home / "config.toml")
+    monkeypatch.setattr(init_cmd, "_CONFIG_PATH", home / "config.toml")
+    monkeypatch.setattr(config_mod, "_LEGACY_CONFIG_PATH", tmp_path / "home" / ".dregs" / "config.toml")
+    monkeypatch.setattr(config_mod, "DEFAULT_CACHE_DIR", str(home / "cache"))
+    return home
+
+
 @pytest.fixture
 def registry(request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Registry:
     """A configured user talking to a fake server, with a fresh process state.
@@ -66,9 +80,6 @@ def registry(request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest
         config_mod.Config(api_token=TOKEN, server_url=SERVER_URL, storage=location, cache_dir=str(tmp_path / "cache")),
         config_path,
     )
-    real_load = config_mod.load_config
-    monkeypatch.setattr(config_mod, "load_config", lambda path=config_path: real_load(path))
-
     monkeypatch.setattr(tracking, "runs_dir", lambda: tmp_path / "runs")
     monkeypatch.delenv("ARTIFACTUM_RUN", raising=False)
     monkeypatch.setattr(artifactum, "_uploaded_code", set())

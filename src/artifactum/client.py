@@ -199,6 +199,16 @@ class ArtifactumClient:
         data = self._patch(f"/artifacts/{canonical_id(artifact_id)}", body)
         return self._meta(data)
 
+    # ── Moving storage ───────────────────────────────────────────────────────────────
+
+    def files_under(self, root: str) -> dict[str, Any]:
+        """Your stored files under a location: {"artifacts": [{id, hash, url}], "code": [{hash, url}]}"""
+        return self._get("/artifacts/storage/files", prefix=root)
+
+    def move_storage(self, old_root: str, new_root: str) -> dict[str, int]:
+        """Repoint your records from one location to another, once the files have been copied."""
+        return self._post("/artifacts/storage/move", {"from_prefix": old_root, "to_prefix": new_root})
+
     @staticmethod
     def _meta(data: dict[str, Any]) -> ArtifactMeta:
         return ArtifactMeta(

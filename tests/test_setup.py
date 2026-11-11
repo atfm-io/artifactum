@@ -77,3 +77,30 @@ def test_commands_before_setup_say_to_run_init(tmp_path: Path, monkeypatch) -> N
     monkeypatch.setattr(config_mod, "load_config", lambda: real_load(tmp_path / "missing.toml"))
     result = atfm("describe", "ART00001")
     assert result.exit_code == 1 and "atfm init" in result.stderr
+
+
+def test_init_with_flags_asks_nothing_and_creates_the_folder(tmp_path: Path, monkeypatch) -> None:
+    """The one line the website shows after sign-up: token and storage given, no questions."""
+    from artifactum.cli import init_cmd
+    from artifactum.config import load_config, save_config
+
+    config_path = tmp_path / ".artifactum" / "config.toml"
+    monkeypatch.setattr(init_cmd, "_CONFIG_PATH", config_path)
+    monkeypatch.setattr(init_cmd, "load_config", lambda: load_config(config_path))
+    monkeypatch.setattr(init_cmd, "save_config", lambda c: save_config(c, config_path))
+
+    def no_questions(*args, **kwargs):
+        raise AssertionError("init asked a question")
+
+    monkeypatch.setattr(init_cmd.Prompt, "ask", no_questions)
+    files = tmp_path / "atfm-files"
+    result = atfm("init", "--token", "atfm_abc", "--storage", str(files))
+    assert result.exit_code == 0, result.output
+    assert files.is_dir() and f"Created {files}" in " ".join(result.stdout.split())
+
+    config = load_config(config_path)
+    assert (config.api_token, config.storage, config.server_url) == (
+        "atfm_abc",
+        f"file://{files.as_posix()}",
+        "https://atfm.io",
+    )
