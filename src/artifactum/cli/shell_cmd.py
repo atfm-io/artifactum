@@ -9,6 +9,7 @@ JSON object, for tools that would rather parse than split strings (R's jsonlite,
     # → parents GRCH38RF and FQ7R1A2B, recorded automatically
     eval "$(atfm run end)"
 """
+
 from __future__ import annotations
 
 import getpass
@@ -97,15 +98,28 @@ def publish(
     }
     try:
         artifact_id = _publish(
-            file, parents=parents, description=description, tags=list(tag or []) or None,
-            docs=docs, name=name, environment=environment, code_path=code.resolve() if code else None,
+            file,
+            parents=parents,
+            description=description,
+            tags=list(tag or []) or None,
+            docs=docs,
+            name=name,
+            environment=environment,
+            code_path=code.resolve() if code else None,
         )
     except ArtifactumError as e:
         fail(str(e) or "Publish failed")
     if scope.state_path is None and parents is None:
-        err.print("[dim]No parents recorded: pass --parent, or start a run with `eval \"$(atfm run start)\"`.[/dim]")
+        err.print('[dim]No parents recorded: pass --parent, or start a run with `eval "$(atfm run start)"`.[/dim]')
     if as_json:
-        emit_json({"id": artifact_id, "file": str(file.resolve()), "parents": recorded, "run_id": scope.run_id if scope.state_path else None})
+        emit_json(
+            {
+                "id": artifact_id,
+                "file": str(file.resolve()),
+                "parents": recorded,
+                "run_id": scope.run_id if scope.state_path else None,
+            }
+        )
     else:
         print(artifact_id)
 
@@ -116,8 +130,10 @@ def run_start(name: str | None = None) -> None:
 
     scope = start_shell_run(name)
     print(f"export ARTIFACTUM_RUN={scope.run_id}")
-    err.print(f"[dim]Run {scope.run_id[:8]} started{f' ({name})' if name else ''}. "
-              "Artifacts fetched with `atfm get` now become parents of what you publish.[/dim]")
+    err.print(
+        f"[dim]Run {scope.run_id[:8]} started{f' ({name})' if name else ''}. "
+        "Artifacts fetched with `atfm get` now become parents of what you publish.[/dim]"
+    )
 
 
 def run_end() -> None:
@@ -137,15 +153,19 @@ def run_status(as_json: bool = False) -> None:
     scope = current_scope()
     if as_json:
         in_run = scope.state_path is not None
-        emit_json({
-            "run_id": scope.run_id if in_run else None,
-            "name": scope.name if in_run else None,
-            "started_at": scope.started_at.isoformat() if in_run else None,
-            "inputs": list(scope.inputs) if in_run else [],
-        })
+        emit_json(
+            {
+                "run_id": scope.run_id if in_run else None,
+                "name": scope.name if in_run else None,
+                "started_at": scope.started_at.isoformat() if in_run else None,
+                "inputs": list(scope.inputs) if in_run else [],
+            }
+        )
         return
     if scope.state_path is None:
         err.print('No run in progress. Start one with: eval "$(atfm run start NAME)"')
         return
-    err.print(f"Run {scope.run_id}{f' ({scope.name})' if scope.name else ''}, started {scope.started_at:%Y-%m-%d %H:%M}")
+    err.print(
+        f"Run {scope.run_id}{f' ({scope.name})' if scope.name else ''}, started {scope.started_at:%Y-%m-%d %H:%M}"
+    )
     err.print(f"Inputs: {', '.join(scope.inputs) or 'none yet'}")

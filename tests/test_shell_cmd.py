@@ -1,4 +1,5 @@
 """Shell commands: atfm get / publish / run, with lineage recorded across separate commands."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -95,7 +96,12 @@ def test_publish_json_outside_a_run(tmp_path: Path, fake_backend) -> None:  # no
     f.write_text("z")
     body = json.loads(atfm("publish", str(f), "-p", "PARENT01", "--json").stdout)
     assert body["parents"] == ["PARENT01"] and body["run_id"] is None
-    assert json.loads(atfm("run", "status", "--json").stdout) == {"run_id": None, "name": None, "started_at": None, "inputs": []}
+    assert json.loads(atfm("run", "status", "--json").stdout) == {
+        "run_id": None,
+        "name": None,
+        "started_at": None,
+        "inputs": [],
+    }
 
 
 def test_describe_and_log_json(fake_backend, monkeypatch) -> None:  # noqa: F811
@@ -106,7 +112,11 @@ def test_describe_and_log_json(fake_backend, monkeypatch) -> None:  # noqa: F811
     monkeypatch.setattr(FakeClient, "get_run", lambda self, aid: {"name": "make child"}, raising=False)
 
     described = json.loads(atfm("describe", "CHILD001", "--json").stdout)
-    assert described["id"] == "CHILD001" and described["hash"] == "h-CHILD001" and described["run"] == {"name": "make child"}
+    assert (
+        described["id"] == "CHILD001"
+        and described["hash"] == "h-CHILD001"
+        and described["run"] == {"name": "make child"}
+    )
 
     tree = json.loads(atfm("log", "CHILD001", "--json").stdout)
     assert tree["id"] == "CHILD001" and [p["id"] for p in tree["parents"]] == ["PARENT01"]
@@ -154,8 +164,14 @@ def test_get_copies_the_file_with_to(tmp_path: Path, fake_backend) -> None:  # n
 
 def test_text_output_of_describe_log_code_and_export(tmp_path: Path, fake_backend, monkeypatch) -> None:  # noqa: F811
     parents = {"CHILD001": [{"id": "PARENT01"}], "PARENT01": []}
-    run = {"name": "make child", "git_commit": "abcdef1234567", "git_branch": "main", "argv": ["make.py"],
-           "python_version": "3.12", "hostname": "box"}
+    run = {
+        "name": "make child",
+        "git_commit": "abcdef1234567",
+        "git_branch": "main",
+        "argv": ["make.py"],
+        "python_version": "3.12",
+        "hostname": "box",
+    }
     monkeypatch.setattr(FakeClient, "get_lineage", lambda self, aid: {"parents": parents[aid]}, raising=False)
     monkeypatch.setattr(FakeClient, "get_run", lambda self, aid: run, raising=False)
 

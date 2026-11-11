@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from jsonargparse import ArgumentParser
 from jsonargparse import Path as ParsedPath
@@ -22,12 +22,14 @@ console = Console()
 def init() -> None:
     """Set up Artifactum for the first time (API token, GCS bucket, cache)."""
     from artifactum.cli.init_cmd import run_init
+
     run_init()
 
 
 def browse() -> None:
     """Preview: browse your 20 most recent artifacts in the terminal (work in progress)."""
     from artifactum.cli.tui import run_browse
+
     run_browse()
 
 
@@ -112,10 +114,14 @@ def describe(artifact_id: str, as_json: bool = False) -> None:
         table.add_row("Produced by", run.get("name") or run.get("entrypoint") or "—")
         if run.get("git_commit"):
             dirty = " (uncommitted changes)" if run.get("git_dirty") else ""
-            table.add_row("Git", f"{run.get('git_path') or ''} @ {run['git_commit'][:10]} on {run.get('git_branch')}{dirty}")
+            table.add_row(
+                "Git", f"{run.get('git_path') or ''} @ {run['git_commit'][:10]} on {run.get('git_branch')}{dirty}"
+            )
         if run.get("argv"):
             table.add_row("Args", " ".join(run["argv"]))
-        where = " on ".join(x for x in (run.get("python_version") and f"Python {run['python_version']}", run.get("hostname")) if x)
+        where = " on ".join(
+            x for x in (run.get("python_version") and f"Python {run['python_version']}", run.get("hostname")) if x
+        )
         if where:  # shell runs have no Python version; with capture_machine off there's no hostname
             table.add_row("Environment", where)
         if run.get("code_url"):
@@ -191,7 +197,6 @@ def _fmt_bytes(n: int | None) -> str:
             return f"{n:.0f} {unit}"
         n //= 1024
     return f"{n:.0f} PB"
-
 
 
 # ── Command line ─────────────────────────────────────────────────────────────────

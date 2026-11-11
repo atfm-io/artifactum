@@ -42,8 +42,12 @@ def registry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Registry:
 
     config_path = tmp_path / "home" / ".artifactum" / "config.toml"
     config_mod.save_config(
-        config_mod.Config(api_token=TOKEN, server_url=SERVER_URL, gcs_bucket="gs://team-bucket/atfm",
-                          cache_dir=str(tmp_path / "cache")),
+        config_mod.Config(
+            api_token=TOKEN,
+            server_url=SERVER_URL,
+            gcs_bucket="gs://team-bucket/atfm",
+            cache_dir=str(tmp_path / "cache"),
+        ),
         config_path,
     )
     real_load = config_mod.load_config

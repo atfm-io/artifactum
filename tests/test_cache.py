@@ -1,7 +1,4 @@
-import tempfile
 from pathlib import Path
-
-import pytest
 
 from artifactum.cache import Cache
 from artifactum.config import Config

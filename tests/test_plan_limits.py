@@ -3,18 +3,27 @@ from __future__ import annotations
 import pytest
 
 
-def test_client_raises_plan_limit_error_and_warns_once(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+def test_client_raises_plan_limit_error_and_warns_once(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
     import httpx
 
     from artifactum import client as client_mod
     from artifactum.config import Config
     from artifactum.exceptions import PlanLimitError
 
-    responses = iter([
-        httpx.Response(201, json={"id": "AAAAAAAA", "warning": "You've used 4 of 5 artifacts"}),
-        httpx.Response(201, json={"id": "BBBBBBBB", "warning": "You've used 5 of 5 artifacts"}),
-        httpx.Response(402, json={"detail": {"message": "You've reached the Free plan's limit", "upgrade_url": "http://x/settings"}}),
-    ])
+    responses = iter(
+        [
+            httpx.Response(201, json={"id": "AAAAAAAA", "warning": "You've used 4 of 5 artifacts"}),
+            httpx.Response(201, json={"id": "BBBBBBBB", "warning": "You've used 5 of 5 artifacts"}),
+            httpx.Response(
+                402,
+                json={
+                    "detail": {"message": "You've reached the Free plan's limit", "upgrade_url": "http://x/settings"}
+                },
+            ),
+        ]
+    )
     c = client_mod.ArtifactumClient(Config(api_token="t", server_url="http://x"))
     monkeypatch.setattr(c, "_post", lambda path, json: c._handle(next(responses)))
     monkeypatch.setattr(client_mod, "_warned", set())

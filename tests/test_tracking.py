@@ -26,8 +26,14 @@ class FakeClient:
         pass
 
     def get_artifact(self, artifact_id: str) -> Any:
-        return ArtifactMeta(id=artifact_id, hash="h-" + artifact_id, gcs_url="gs://b/x", content_type=None,
-                            size_bytes=None, description=None)
+        return ArtifactMeta(
+            id=artifact_id,
+            hash="h-" + artifact_id,
+            gcs_url="gs://b/x",
+            content_type=None,
+            size_bytes=None,
+            description=None,
+        )
 
     def register_artifact(self, **kwargs: Any) -> str:
         FakeClient.registered.append(kwargs)
@@ -99,7 +105,9 @@ def test_step_as_decorator(tmp_path: Path, fake_backend: list[dict[str, Any]]) -
     assert fake_backend[0]["run_id"] != fake_backend[1]["run_id"]
 
 
-def test_run_captures_script_snapshot(tmp_path: Path, fake_backend: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_captures_script_snapshot(
+    tmp_path: Path, fake_backend: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch
+) -> None:
     script = _file(tmp_path, "pipeline.py")
     monkeypatch.setattr(sys, "argv", [str(script), "--api-token", "s3cret", "--rows=10"])
     artifactum.publish(_file(tmp_path, "out.csv"))
@@ -110,7 +118,9 @@ def test_run_captures_script_snapshot(tmp_path: Path, fake_backend: list[dict[st
     assert run["python_version"] and isinstance(run["packages"], list)
 
 
-def test_machine_details_can_be_left_out(tmp_path: Path, fake_backend: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_machine_details_can_be_left_out(
+    tmp_path: Path, fake_backend: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch
+) -> None:
     from artifactum.config import load_config
 
     load_config().capture_machine = False
@@ -121,7 +131,9 @@ def test_machine_details_can_be_left_out(tmp_path: Path, fake_backend: list[dict
     assert run["python_version"] and "packages" in run  # the code's own details still go
 
 
-def test_capture_failure_does_not_block_publish(tmp_path: Path, fake_backend: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_capture_failure_does_not_block_publish(
+    tmp_path: Path, fake_backend: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch
+) -> None:
     def boom(**_: Any) -> None:
         raise RuntimeError("no git for you")
 
@@ -133,7 +145,11 @@ def test_capture_failure_does_not_block_publish(tmp_path: Path, fake_backend: li
 
 def test_redact_argv() -> None:
     assert redact_argv(["--password", "pw", "--key=abc", "-v", "file.csv"]) == [
-        "--password", "***", "--key=***", "-v", "file.csv",
+        "--password",
+        "***",
+        "--key=***",
+        "-v",
+        "file.csv",
     ]
 
 

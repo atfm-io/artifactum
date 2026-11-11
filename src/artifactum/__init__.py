@@ -31,17 +31,22 @@ def _gcs_dest(gcs_bucket: str, content_hash: str, filename: str) -> str:
 def artifact(id: str) -> str:
     """Resolve an artifact ID to a local file path, fetching from GCS if needed."""
     from artifactum.cache import Cache
+    from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
     from artifactum.gcs import download
     from artifactum.hashing import sha256_file
-    from artifactum.client import ArtifactumClient
 
     config = load_config()
     client = ArtifactumClient(config)
     meta = client.get_artifact(id)
     record_input(meta.id)
     if meta.superseded_by:
-        log.warning("artifactum: %s is an older version of %s; the newest is %s", meta.id, meta.name or "this artifact", meta.superseded_by)
+        log.warning(
+            "artifactum: %s is an older version of %s; the newest is %s",
+            meta.id,
+            meta.name or "this artifact",
+            meta.superseded_by,
+        )
     elif meta.stale:
         log.warning("artifactum: %s was built from inputs that have newer versions since", meta.id)
 
@@ -106,11 +111,10 @@ def _publish(
 ) -> str:
     """publish(), plus the CLI's way to describe a shell run: ``environment`` replaces the
     captured Python environment and ``code_path`` is snapshotted instead of the running script."""
-    from artifactum.cache import Cache
+    from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
     from artifactum.gcs import upload
     from artifactum.hashing import sha256_file
-    from artifactum.client import ArtifactumClient
 
     config = load_config()
     client = ArtifactumClient(config)
@@ -183,8 +187,10 @@ def _capture_run(
     if not config.capture_code:
         return run
     try:
-        snapshot = CodeSnapshot(code_path.name, code_path.read_bytes()) if code_path else (
-            None if environment is not None else code_snapshot()
+        snapshot = (
+            CodeSnapshot(code_path.name, code_path.read_bytes())
+            if code_path
+            else (None if environment is not None else code_snapshot())
         )
         if snapshot is not None:
             code_hash = hashlib.sha256(snapshot.content).hexdigest()
@@ -206,8 +212,8 @@ def _capture_run(
 
 def search(query: str, *, tags: list[str] | None = None) -> list[ArtifactMeta]:
     """Search the registry by free text and/or tags."""
-    from artifactum.config import load_config
     from artifactum.client import ArtifactumClient
+    from artifactum.config import load_config
 
     config = load_config()
     client = ArtifactumClient(config)

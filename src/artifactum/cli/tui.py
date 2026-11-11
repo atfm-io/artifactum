@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import pyperclip
@@ -21,7 +21,7 @@ def _age(dt_str: str | None) -> str:
         return "?"
     try:
         dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        delta = datetime.now(timezone.utc) - dt
+        delta = datetime.now(UTC) - dt
         s = int(delta.total_seconds())
         if s < 3600:
             return f"{s // 60}m"
@@ -129,8 +129,11 @@ class ArtifactumApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.notify("The terminal browser is a preview: it shows your 20 most recent artifacts and has no search yet.",
-                    title="Work in progress", timeout=6)
+        self.notify(
+            "The terminal browser is a preview: it shows your 20 most recent artifacts and has no search yet.",
+            title="Work in progress",
+            timeout=6,
+        )
         self._load_artifacts()
 
     def on_tabs_tab_activated(self, event: Tabs.TabActivated) -> None:

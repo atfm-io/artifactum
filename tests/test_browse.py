@@ -1,4 +1,5 @@
 """The terminal browser (atfm browse), driven with keypresses through Textual's test pilot."""
+
 from __future__ import annotations
 
 import asyncio

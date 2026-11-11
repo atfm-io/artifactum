@@ -3,6 +3,7 @@
 Everything above them (the client, HTTP error handling, hashing, the cache, lineage
 tracking and the CLI) runs for real, so tests can follow what a user actually does.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -87,10 +88,15 @@ class FakeServer:
 
     def _register(self, body: dict[str, Any]) -> httpx.Response:
         if self.artifact_limit is not None and self.publish_count() >= self.artifact_limit:
-            return httpx.Response(402, json={"detail": {
-                "message": f"You've reached the Free plan's limit of {self.artifact_limit} artifacts.",
-                "upgrade_url": f"{SERVER_URL}/settings",
-            }})
+            return httpx.Response(
+                402,
+                json={
+                    "detail": {
+                        "message": f"You've reached the Free plan's limit of {self.artifact_limit} artifacts.",
+                        "upgrade_url": f"{SERVER_URL}/settings",
+                    }
+                },
+            )
         missing = [p for p in body.get("parent_ids", []) if p not in self.artifacts]
         if missing:
             return httpx.Response(422, json={"detail": f"Unknown parent {missing[0]}"})
@@ -185,5 +191,3 @@ def atfm(*args: str) -> Result:
         except SystemExit as e:
             code = e.code if isinstance(e.code, int) else 1
     return Result(code, out.getvalue(), err.getvalue())
-
-

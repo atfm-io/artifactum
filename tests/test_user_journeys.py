@@ -3,6 +3,7 @@
 Only the network and the bucket are faked (tests/fakes.py); the client, HTTP error
 handling, hashing, the cache, lineage tracking and the CLI all run for real.
 """
+
 from __future__ import annotations
 
 import json
@@ -203,24 +204,47 @@ def test_init_writes_the_config_and_keeps_the_token_on_a_rerun(tmp_path: Path, m
                 if prompt.startswith(start):
                     return value if value != "<default>" else (default or "")
             raise AssertionError(f"unexpected prompt {prompt!r}")
+
         return ask
 
     cache = tmp_path / "cache"
-    monkeypatch.setattr(init_cmd.Prompt, "ask", answer({
-        "Server URL": "<default>", "API token": "atfm_first", "GCS bucket": "gs://lab/atfm",
-        "Local cache directory": str(cache), "Cache size limit": "5",
-    }))
+    monkeypatch.setattr(
+        init_cmd.Prompt,
+        "ask",
+        answer(
+            {
+                "Server URL": "<default>",
+                "API token": "atfm_first",
+                "GCS bucket": "gs://lab/atfm",
+                "Local cache directory": str(cache),
+                "Cache size limit": "5",
+            }
+        ),
+    )
     assert atfm("init").exit_code == 0
     config = load_config(config_path)
     assert (config.server_url, config.api_token, config.gcs_bucket, config.cache_limit_gb) == (
-        "https://atfm.io", "atfm_first", "gs://lab/atfm", 5.0)
+        "https://atfm.io",
+        "atfm_first",
+        "gs://lab/atfm",
+        5.0,
+    )
     assert cache.is_dir()
 
     # Re-running to change the bucket: an empty token keeps the saved one; a bad size falls back
-    monkeypatch.setattr(init_cmd.Prompt, "ask", answer({
-        "Server URL": "<default>", "API token": "", "GCS bucket": "gs://lab/new",
-        "Local cache directory": "<default>", "Cache size limit": "lots",
-    }))
+    monkeypatch.setattr(
+        init_cmd.Prompt,
+        "ask",
+        answer(
+            {
+                "Server URL": "<default>",
+                "API token": "",
+                "GCS bucket": "gs://lab/new",
+                "Local cache directory": "<default>",
+                "Cache size limit": "lots",
+            }
+        ),
+    )
     atfm("init")
     config = load_config(config_path)
     assert (config.api_token, config.gcs_bucket, config.cache_limit_gb) == ("atfm_first", "gs://lab/new", 2.0)

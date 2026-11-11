@@ -7,6 +7,7 @@ is uploaded to the team's own bucket alongside the data.
 
 from __future__ import annotations
 
+import contextlib
 import getpass
 import platform
 import re
@@ -54,9 +55,7 @@ def _notebook_path(ip: Any) -> str | None:
 
 def _git(cwd: Path, *args: str) -> str | None:
     try:
-        out = subprocess.run(
-            ["git", *args], cwd=cwd, capture_output=True, text=True, timeout=3, check=True
-        )
+        out = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, timeout=3, check=True)
     except (OSError, subprocess.SubprocessError):
         return None
     return out.stdout.strip() or None
@@ -99,10 +98,8 @@ def git_info(path: Path) -> dict[str, Any]:
         return {}
     rel = None
     if path.is_file():
-        try:
+        with contextlib.suppress(ValueError):  # the file is outside the repository
             rel = str(path.resolve().relative_to(Path(top).resolve()))
-        except ValueError:
-            pass
     status = _git(cwd, "status", "--porcelain", "--untracked-files=no")
     return {
         "git_commit": _git(cwd, "rev-parse", "HEAD"),

@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 
 from artifactum.config import Config
-from artifactum.exceptions import ArtifactNotFoundError, AuthError, ArtifactumError, PlanLimitError
+from artifactum.exceptions import ArtifactNotFoundError, ArtifactumError, AuthError, PlanLimitError
 
 
 @dataclass
@@ -76,15 +76,18 @@ class ArtifactumClient:
     def download_export(self, dest: Path) -> int:
         """Stream the full registry export (a zip) to `dest`; returns its size in bytes."""
         size = 0
-        with httpx.Client(headers=self._headers, timeout=httpx.Timeout(30.0, read=600.0)) as c:
-            with c.stream("GET", f"{self._base}/api/export") as r:
-                if not r.is_success:
-                    r.read()
-                    self._handle(r)
-                with open(dest, "wb") as f:
-                    for chunk in r.iter_bytes():
-                        f.write(chunk)
-                        size += len(chunk)
+        timeout = httpx.Timeout(30.0, read=600.0)
+        with (
+            httpx.Client(headers=self._headers, timeout=timeout) as c,
+            c.stream("GET", f"{self._base}/api/export") as r,
+        ):
+            if not r.is_success:
+                r.read()
+                self._handle(r)
+            with open(dest, "wb") as f:
+                for chunk in r.iter_bytes():
+                    f.write(chunk)
+                    size += len(chunk)
         return size
 
     @staticmethod
@@ -96,7 +99,9 @@ class ArtifactumClient:
         if r.status_code == 401:
             raise AuthError("Invalid or missing API token.")
         if r.status_code == 402:
-            detail = (r.json() if r.headers.get("content-type", "").startswith("application/json") else {}).get("detail")
+            detail = (r.json() if r.headers.get("content-type", "").startswith("application/json") else {}).get(
+                "detail"
+            )
             if isinstance(detail, dict):
                 raise PlanLimitError(detail.get("message") or "Artifact limit reached.", detail.get("upgrade_url"))
             raise PlanLimitError("Artifact limit reached for your plan.")
