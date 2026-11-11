@@ -1,45 +1,36 @@
-"""Artifactum CLI entry point."""
+"""Artifactum CLI entry point: the `artifactum` and `atfm` commands, parsed with jsonargparse."""
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Callable
 
-import typer
+from jsonargparse import ArgumentParser
+from jsonargparse import Path as ParsedPath
+from jsonargparse.typing import Path_fr
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
-app = typer.Typer(name="artifactum", help="Artifactum: a registry and lineage tracker for your data files.")
+# Shell use: atfm get / atfm publish / atfm run (see shell_cmd.py)
+from artifactum.cli import shell_cmd
+
 console = Console()
 
-# Shell use: atfm get / atfm publish / atfm run (see shell_cmd.py)
-from artifactum.cli import shell_cmd  # noqa: E402
 
-app.command("get")(shell_cmd.get)
-app.command("publish")(shell_cmd.publish)
-app.add_typer(shell_cmd.run_app, name="run")
-
-
-@app.command()
 def init() -> None:
     """Set up Artifactum for the first time (API token, GCS bucket, cache)."""
     from artifactum.cli.init_cmd import run_init
     run_init()
 
 
-@app.command()
 def browse() -> None:
     """Preview: browse your 20 most recent artifacts in the terminal (work in progress)."""
     from artifactum.cli.tui import run_browse
     run_browse()
 
 
-@app.command()
-def log(
-    artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)"),
-    as_json: bool = shell_cmd.JSON_OPTION,
-) -> None:
+def log(artifact_id: str, as_json: bool = False) -> None:
     """Print the full upstream lineage chain for an artifact."""
     from artifactum.client import ArtifactumClient
     from artifactum.config import load_config
@@ -84,11 +75,7 @@ def log(
     console.print(root)
 
 
-@app.command()
-def describe(
-    artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)"),
-    as_json: bool = shell_cmd.JSON_OPTION,
-) -> None:
+def describe(artifact_id: str, as_json: bool = False) -> None:
     """Print detailed metadata for an artifact."""
     from dataclasses import asdict
 
@@ -135,11 +122,9 @@ def describe(
     console.print(table)
 
 
-@app.command()
-def code(artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)")) -> None:
+def code(artifact_id: str) -> None:
     """Print the code snapshot captured when an artifact was published."""
     import tempfile
-    from pathlib import Path
 
     from rich.syntax import Syntax
 
@@ -151,7 +136,7 @@ def code(artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)"
     run = client.get_run(artifact_id)
     if not run or not run.get("code_url"):
         console.print(f"[yellow]No code snapshot was recorded for {artifact_id}.[/yellow]")
-        raise typer.Exit(1)
+        raise SystemExit(1)
 
     with tempfile.TemporaryDirectory() as tmp:
         local = Path(tmp) / "code.py"
@@ -159,10 +144,7 @@ def code(artifact_id: str = typer.Argument(..., help="Artifact ID (e.g. XBHFAL)"
         console.print(Syntax(local.read_text(), "python", line_numbers=True))
 
 
-@app.command()
-def export(
-    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Where to save the zip (default: artifactum-export-<date>.zip)"),
-) -> None:
+def export(output: Path | None = None) -> None:
     """Download everything in your registry: artifacts, lineage, runs, uses, edits, docs and collections."""
     from datetime import date
 
@@ -206,5 +188,97 @@ def _fmt_bytes(n: int | None) -> str:
     return f"{n:.0f} PB"
 
 
+
+# ── Command line ─────────────────────────────────────────────────────────────────
+
+ID_HELP = "Artifact ID (e.g. XBHFAL3R)"
+JSON_HELP = "Print the result as one JSON object on stdout"
+
+
+def _command(parent, name: str, fn: Callable) -> ArgumentParser:
+    """Add a subcommand whose help is the first line of fn's docstring."""
+    parser = ArgumentParser(description=fn.__doc__)
+    parent.add_subcommand(name, parser, help=(fn.__doc__ or "").split("\n")[0])
+    return parser
+
+
+def _json(parser: ArgumentParser) -> None:
+    parser.add_argument("--json", dest="as_json", action="store_true", help=JSON_HELP)
+
+
+# Each command's arguments are named after its function's parameters, so the parsed
+# values are passed straight through as keyword arguments.
+COMMANDS: dict[str, Callable] = {
+    "get": shell_cmd.get,
+    "publish": shell_cmd.publish,
+    "run start": shell_cmd.run_start,
+    "run end": shell_cmd.run_end,
+    "run status": shell_cmd.run_status,
+    "init": init,
+    "browse": browse,
+    "log": log,
+    "describe": describe,
+    "code": code,
+    "export": export,
+}
+
+
+def build_parser() -> ArgumentParser:
+    parser = ArgumentParser(prog="atfm", description="Artifactum: a registry and lineage tracker for your data files.")
+    commands = parser.add_subcommands(dest="command")
+
+    p = _command(commands, "get", shell_cmd.get)
+    p.add_argument("artifact_id", help=ID_HELP)
+    p.add_argument("-o", "--to", type=Path, help="Also copy the file here (a file or directory)")
+    _json(p)
+
+    p = _command(commands, "publish", shell_cmd.publish)
+    p.add_argument("file", type=Path_fr, help="The file to publish")
+    p.add_argument("-d", "--description")
+    p.add_argument("-t", "--tag", action="append", help="Tag (repeatable)")
+    p.add_argument("-p", "--parent", action="append", help="Parent artifact ID (repeatable). Default: the run's inputs")
+    p.add_argument("--no-parents", dest="no_parents", action="store_true", help="Record no parents, even inside a run")
+    p.add_argument("-n", "--name", help="What this is a version of. Without it, the file name")
+    p.add_argument("--docs", type=Path_fr, help="Markdown file shown on the artifact's page")
+    p.add_argument("--code", type=Path_fr, help="The script that made it, snapshotted as provenance")
+    _json(p)
+
+    run = ArgumentParser(description="Group shell commands into one run, so lineage is recorded across them.")
+    commands.add_subcommand("run", run, help="Group shell commands into one run, so lineage is recorded across them.")
+    actions = run.add_subcommands(dest="action")
+    _command(actions, "start", shell_cmd.run_start).add_argument("name", nargs="?", help="Shown as the run's name")
+    _command(actions, "end", shell_cmd.run_end)
+    _json(_command(actions, "status", shell_cmd.run_status))
+
+    _command(commands, "init", init)
+    _command(commands, "browse", browse)
+    for name, fn in (("log", log), ("describe", describe)):
+        p = _command(commands, name, fn)
+        p.add_argument("artifact_id", help=ID_HELP)
+        _json(p)
+    _command(commands, "code", code).add_argument("artifact_id", help=ID_HELP)
+    _command(commands, "export", export).add_argument(
+        "-o", "--output", type=Path, help="Where to save the zip (default: artifactum-export-<date>.zip)"
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    import sys
+
+    argv = sys.argv[1:] if argv is None else argv
+    parser = build_parser()
+    if argv in ([], ["run"]):  # a bare group: show what's in it
+        parser.parse_args([*argv, "--help"])
+    cfg = parser.parse_args(argv)
+    name, args = cfg.command, cfg[cfg.command]
+    if name == "run":
+        name, args = f"run {args.action}", args[args.action]
+    kwargs = args.as_dict() if args else {}
+    # File arguments arrive as jsonargparse paths (checked to exist); commands take pathlib paths
+    kwargs = {k: Path(v) if isinstance(v, ParsedPath) else v for k, v in kwargs.items()}
+    COMMANDS[name](**kwargs)
+
+
 if __name__ == "__main__":
-    app()
+    main()

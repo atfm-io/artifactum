@@ -6,3 +6,6 @@ build/
 .pixi/*
 !.pixi/config.toml
 .pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
