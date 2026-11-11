@@ -61,13 +61,6 @@ def test_explicit_parents_and_no_parents(tmp_path: Path, fake_backend) -> None: 
     assert not fake_backend[1].get("parent_ids")
 
 
-def test_outside_a_run_publish_hints_how_to_record_parents(tmp_path: Path, fake_backend) -> None:  # noqa: F811
-    f = tmp_path / "y.csv"
-    f.write_text("y")
-    result = atfm("publish", str(f))
-    assert result.exit_code == 0 and "start a run" in result.stderr
-
-
 # ── --json ───────────────────────────────────────────────────────────────────
 
 import json  # noqa: E402
@@ -187,3 +180,13 @@ def test_text_output_of_describe_log_code_and_export(tmp_path: Path, fake_backen
     monkeypatch.setattr(FakeClient, "download_export", lambda self, dest: dest.write_bytes(b"zip") or 3, raising=False)
     exported = atfm("export", "-o", str(tmp_path))
     assert exported.exit_code == 0 and list(tmp_path.glob("artifactum-export-*.zip"))
+
+
+def test_the_no_parents_hint_waits_until_the_second_publish(tmp_path: Path, fake_backend) -> None:  # noqa: F811
+    f = tmp_path / "counts.csv"
+    f.write_text("x")
+    first = atfm("publish", str(f))
+    assert first.exit_code == 0 and "No parents recorded" not in first.stderr  # a newcomer's first file
+    second = atfm("publish", str(f))
+    assert "start a run" in second.stderr  # after that, outside a run, it says how to record parents
+    assert "No parents recorded" not in atfm("publish", str(f), "--no-parents").stderr

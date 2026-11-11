@@ -58,6 +58,22 @@ def get(artifact_id: str, to: Path | None = None, as_json: bool = False) -> None
         print(path)
 
 
+def _first_publish() -> bool:
+    """True the first time this machine publishes from the shell, so a newcomer's first file
+    doesn't come with a hint about runs and parents they have no use for yet."""
+    from artifactum import config
+
+    marker = config._CONFIG_PATH.parent / "published-before"
+    if marker.exists():
+        return False
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.touch()
+    except OSError:
+        return False  # can't remember it, so don't stay quiet forever
+    return True
+
+
 def publish(
     file: Path,
     description: str | None = None,
@@ -109,7 +125,7 @@ def publish(
         )
     except ArtifactumError as e:
         fail(str(e) or "Publish failed")
-    if scope.state_path is None and parents is None:
+    if scope.state_path is None and parents is None and not _first_publish():
         err.print('[dim]No parents recorded: pass --parent, or start a run with `eval "$(atfm run start)"`.[/dim]')
     if as_json:
         emit_json(
