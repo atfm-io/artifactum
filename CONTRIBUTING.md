@@ -1,10 +1,20 @@
 # Contributing
 
+## Development
+
+The development environment is defined in `pyproject.toml` (the `[tool.pixi.*]` tables):
+
+```bash
+pixi run test   # runs the tests and prints a coverage report
+```
+
+Without pixi: `pip install -e ".[test]"` and `pytest`.
+
 ## Commit messages
 
 Every commit on `main` follows [Conventional Commits](https://www.conventionalcommits.org/).
-CI checks this on every push and pull request, and releases are cut from these messages
-by [release-please](https://github.com/googleapis/release-please).
+Releases are cut from these messages by [release-please](https://github.com/googleapis/release-please),
+so a commit that doesn't follow the format is left out of the changelog.
 
 ```
 <type>(<optional scope>): <summary in the imperative>
