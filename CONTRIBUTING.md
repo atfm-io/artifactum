@@ -6,9 +6,12 @@ The development environment is defined in `pyproject.toml` (the `[tool.pixi.*]` 
 
 ```bash
 pixi run test   # runs the tests and prints a coverage report
+pixi run fmt    # formats the code and fixes what ruff can fix
+pixi run lint   # what CI checks: formatting and lint, without changing anything
 ```
 
-Without pixi: `pip install -e ".[test]"` and `pytest`.
+Without pixi: `pip install -e ".[dev]"`, then `pytest`, `ruff format` and `ruff check`.
+Style settings are in `[tool.ruff]` in `pyproject.toml`.
 
 ## Commit messages
 
