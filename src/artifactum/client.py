@@ -90,7 +90,9 @@ class ArtifactumClient:
     @staticmethod
     def _handle(r: httpx.Response) -> Any:
         if r.status_code == 404:
-            raise ArtifactNotFoundError(r.url.path.rsplit("/", 1)[-1])
+            # /artifacts/ID, /artifacts/ID/run, /artifacts/ID/lineage: name the artifact, not the sub-path
+            parts = r.url.path.strip("/").split("/")
+            raise ArtifactNotFoundError(parts[1] if len(parts) > 1 and parts[0] == "artifacts" else parts[-1])
         if r.status_code == 401:
             raise AuthError("Invalid or missing API token.")
         if r.status_code == 402:

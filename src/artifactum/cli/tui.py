@@ -237,6 +237,16 @@ class ArtifactumApp(App):
         )
         self.query_one("#detail", Static).update(detail)
 
+    def _apply_edit(self, artifact_id: str, **fields: Any) -> None:
+        """Apply a saved edit to every copy of the artifact held here. The list can be
+        reloaded while a row is highlighted, so the selection may be an older copy."""
+        for a in [*self._artifacts, self._selected]:
+            if a is not None and a.id == artifact_id:
+                for key, value in fields.items():
+                    setattr(a, key, value)
+        if self._selected is not None:
+            self._render_detail(self._selected)
+
     def action_edit_description(self) -> None:
         if self._selected is None:
             return
@@ -245,8 +255,7 @@ class ArtifactumApp(App):
             if value is not None and self._selected:
                 try:
                     self._client.update_artifact(self._selected.id, description=value)
-                    self._selected.description = value
-                    self._render_detail(self._selected)
+                    self._apply_edit(self._selected.id, description=value)
                 except Exception as e:
                     self.notify(f"Error updating: {e}", severity="error")
 
@@ -266,8 +275,7 @@ class ArtifactumApp(App):
                 new_tags = [t.strip() for t in value.split(",") if t.strip()]
                 try:
                     self._client.update_artifact(self._selected.id, tags=new_tags)
-                    self._selected.tags = new_tags
-                    self._render_detail(self._selected)
+                    self._apply_edit(self._selected.id, tags=new_tags)
                     self._apply_sort()
                 except Exception as e:
                     self.notify(f"Error updating: {e}", severity="error")

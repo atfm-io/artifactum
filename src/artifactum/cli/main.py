@@ -14,6 +14,7 @@ from rich.tree import Tree
 
 # Shell use: atfm get / atfm publish / atfm run (see shell_cmd.py)
 from artifactum.cli import shell_cmd
+from artifactum.exceptions import ArtifactumError
 
 console = Console()
 
@@ -52,10 +53,9 @@ def log(artifact_id: str, as_json: bool = False) -> None:
         try:
             meta = client.get_artifact(aid)
         except Exception as e:
-            label = f"[red]{aid} (error: {e})[/red]"
-            if tree is None:
-                return Tree(label)
-            tree.add(label)
+            if tree is None:  # the artifact asked for: report it as an error
+                raise
+            tree.add(f"[red]{aid} (error: {e})[/red]")  # a parent: show what could be read
             return tree
 
         filename = meta.gcs_url.rsplit("/", 1)[-1] if meta.gcs_url else aid
@@ -115,7 +115,9 @@ def describe(artifact_id: str, as_json: bool = False) -> None:
             table.add_row("Git", f"{run.get('git_path') or ''} @ {run['git_commit'][:10]} on {run.get('git_branch')}{dirty}")
         if run.get("argv"):
             table.add_row("Args", " ".join(run["argv"]))
-        table.add_row("Environment", f"Python {run.get('python_version')} on {run.get('hostname')}")
+        where = " on ".join(x for x in (run.get("python_version") and f"Python {run['python_version']}", run.get("hostname")) if x)
+        if where:  # shell runs have no Python version; with capture_machine off there's no hostname
+            table.add_row("Environment", where)
         if run.get("code_url"):
             table.add_row("Code", f"{run['code_url']}  (atfm code {artifact_id})")
 
@@ -163,10 +165,13 @@ def _lineage_json(client, aid: str, visited: set[str]) -> dict:
     """{id, filename, description, created_at, parents: [...]}, each artifact expanded once."""
     if aid in visited:
         return {"id": aid, "seen": True, "parents": []}
+    root = not visited
     visited.add(aid)
     try:
         meta = client.get_artifact(aid)
     except Exception as e:
+        if root:
+            raise
         return {"id": aid, "error": str(e), "parents": []}
     parents = client.get_lineage(aid).get("parents", [])
     return {
@@ -277,7 +282,10 @@ def main(argv: list[str] | None = None) -> None:
     kwargs = args.as_dict() if args else {}
     # File arguments arrive as jsonargparse paths (checked to exist); commands take pathlib paths
     kwargs = {k: Path(v) if isinstance(v, ParsedPath) else v for k, v in kwargs.items()}
-    COMMANDS[name](**kwargs)
+    try:
+        COMMANDS[name](**kwargs)
+    except ArtifactumError as e:  # unknown ID, bad token, no config, plan limit...: a message, not a traceback
+        shell_cmd.fail(str(e))
 
 
 if __name__ == "__main__":
