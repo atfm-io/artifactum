@@ -1,27 +1,13 @@
 """Shell commands: atfm get / publish / run, with lineage recorded across separate commands."""
 from __future__ import annotations
 
-import contextlib
-import io
-from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
 from artifactum import tracking
-from artifactum.cli.main import main
+from tests.fakes import atfm
 from tests.test_tracking import FakeClient, fake_backend  # noqa: F401  (fixture)
-
-
-@dataclass
-class Result:
-    exit_code: int
-    stdout: str
-    stderr: str
-
-    @property
-    def output(self) -> str:
-        return self.stdout + self.stderr
 
 
 @pytest.fixture(autouse=True)
@@ -29,19 +15,6 @@ def isolated_runs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(tracking, "runs_dir", lambda: tmp_path / "runs")
     monkeypatch.delenv("ARTIFACTUM_RUN", raising=False)
     tracking.reset()
-
-
-def atfm(*args: str) -> Result:
-    """Run one command as if it were its own process: tracking state comes from env + state file."""
-    tracking.reset()
-    out, err = io.StringIO(), io.StringIO()
-    code = 0
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-        try:
-            main(list(args))
-        except SystemExit as e:
-            code = e.code if isinstance(e.code, int) else 1
-    return Result(code, out.getvalue(), err.getvalue())
 
 
 def test_a_shell_run_records_inputs_across_commands(tmp_path: Path, fake_backend, monkeypatch) -> None:  # noqa: F811
