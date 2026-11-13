@@ -317,6 +317,14 @@ def build_parser() -> ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    try:
+        _main(argv)
+    except (KeyboardInterrupt, EOFError):  # Ctrl-C anywhere, or Ctrl-D at a prompt: no traceback
+        shell_cmd.err.print("\nCancelled.")
+        raise SystemExit(130) from None  # 128 + SIGINT, what shells expect after Ctrl-C
+
+
+def _main(argv: list[str] | None) -> None:
     import sys
 
     argv = sys.argv[1:] if argv is None else argv

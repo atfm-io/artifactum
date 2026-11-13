@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from tests.fakes import atfm
 
 
@@ -207,3 +209,20 @@ def test_messages_keep_their_square_brackets(capsys) -> None:
     finally:
         mod.storage_for = original
     assert "artifactum[gcs]" in "".join(capsys.readouterr().out.split())
+
+
+@pytest.mark.parametrize("interrupt", [KeyboardInterrupt, EOFError])
+def test_ctrl_c_cancels_quietly(monkeypatch, capsys, interrupt) -> None:
+    """Ctrl-C (or Ctrl-D at a prompt) says Cancelled and exits 130, with no traceback."""
+    from artifactum.cli import init_cmd
+    from artifactum.cli.main import main
+
+    def interrupted(*args, **kwargs):
+        raise interrupt
+
+    monkeypatch.setattr(init_cmd.Prompt, "ask", interrupted)
+    with pytest.raises(SystemExit) as exit:
+        main(["init"])
+    assert exit.value.code == 130
+    err = capsys.readouterr().err
+    assert "Cancelled." in err and "Traceback" not in err
