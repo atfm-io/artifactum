@@ -31,7 +31,6 @@ def test_init_writes_the_config_and_keeps_the_token_on_a_rerun(tmp_path: Path, m
         "ask",
         answer(
             {
-                "Server URL": "<default>",
                 "API token": "atfm_first",
                 "Storage location": "gs://lab/atfm",
                 "Local cache directory": str(cache),
@@ -56,7 +55,6 @@ def test_init_writes_the_config_and_keeps_the_token_on_a_rerun(tmp_path: Path, m
         "ask",
         answer(
             {
-                "Server URL": "<default>",
                 "API token": "",
                 "Storage location": "~/atfm-files",
                 "Local cache directory": "<default>",
@@ -117,3 +115,30 @@ def test_version_flag_prints_the_installed_version(capsys) -> None:
     with pytest.raises(SystemExit):
         main(["--version"])
     assert capsys.readouterr().out.strip() == f"atfm {version('artifactum')}"
+
+
+def test_init_points_at_atfm_io_unless_told_otherwise(tmp_path: Path, monkeypatch) -> None:
+    """No server question; a URL left over from an earlier setup is replaced, --server still works."""
+    from artifactum.cli import init_cmd
+    from artifactum.config import Config, load_config, save_config
+
+    config_path = tmp_path / ".artifactum" / "config.toml"
+    monkeypatch.setattr(init_cmd, "load_config", lambda: load_config(config_path))
+    monkeypatch.setattr(init_cmd, "save_config", lambda c: save_config(c, config_path))
+    save_config(Config(api_token="atfm_old", server_url="http://localhost:8000"), config_path)
+
+    asked: list[str] = []
+
+    def ask(prompt: str, default: str | None = None, password: bool = False) -> str:
+        asked.append(prompt)
+        return default or ""
+
+    monkeypatch.setattr(init_cmd.Prompt, "ask", ask)
+    assert atfm("init", "--storage", str(tmp_path / "files")).exit_code == 0
+    assert not any("Server" in p for p in asked)
+    assert "API token (from https://atfm.io/settings)" in asked
+    assert load_config(config_path).server_url == "https://atfm.io"
+
+    files = str(tmp_path / "files")
+    assert atfm("init", "--token", "atfm_x", "--storage", files, "--server", "http://localhost:8001").exit_code == 0
+    assert load_config(config_path).server_url == "http://localhost:8001"

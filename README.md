@@ -25,8 +25,8 @@ atfm init
 The package is `artifactum`. `pip install atfm` works too: [atfm](https://pypi.org/project/atfm/) is a
 placeholder we publish so nobody else can take the name, and it only installs `artifactum`.
 
-`init` asks for your API token (from Settings at [atfm.io](https://atfm.io)), your server URL (`https://atfm.io`
-unless your team runs its own) and where to store files. Or give them and skip the questions:
+`init` asks for your API token (from Settings at [atfm.io](https://atfm.io)) and where to store files. Or
+give them and skip the questions:
 
 ```bash
 atfm init --token atfm_... --storage ~/atfm-files

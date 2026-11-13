@@ -5,7 +5,7 @@ from dataclasses import replace
 from rich.console import Console
 from rich.prompt import Prompt
 
-from artifactum.config import _CONFIG_PATH, Config, load_config, save_config
+from artifactum.config import _CONFIG_PATH, DEFAULT_SERVER_URL, Config, load_config, save_config
 from artifactum.exceptions import ArtifactumError, ConfigError
 from artifactum.storage import LocalStorage, normalise_location, storage_for
 
@@ -24,8 +24,9 @@ def run_init(token: str | None = None, storage: str | None = None, server: str |
         current = load_config()
     except ConfigError:
         current = Config()
-    if server:
-        current = replace(current, server_url=server)
+    # Always atfm.io unless --server says otherwise (a team's own server, or local development),
+    # so a URL left over from an earlier setup doesn't stick
+    current = replace(current, server_url=server or DEFAULT_SERVER_URL)
 
     if token and storage:
         config = replace(current, api_token=token, storage=normalise_location(storage))
@@ -46,7 +47,7 @@ def _ask(current: Config, token: str | None, storage: str | None) -> Config:
     console.print("\n[bold cyan]Artifactum setup[/bold cyan]\n")
     console.print(f"This will create [bold]{_CONFIG_PATH}[/bold].\n")
 
-    server_url = Prompt.ask("Server URL", default=current.server_url)
+    server_url = current.server_url
     api_token = token or (
         Prompt.ask(f"API token (from {server_url.rstrip('/')}/settings)", password=True) or current.api_token
     )
