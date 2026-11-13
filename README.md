@@ -1,7 +1,7 @@
 # Artifactum · `atfm`
 
 [![PyPI](https://img.shields.io/pypi/v/artifactum)](https://pypi.org/project/artifactum/)
-[![Python](https://img.shields.io/pypi/pyversions/artifactum)](https://pypi.org/project/artifactum/)
+[![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https://raw.githubusercontent.com/atfm-io/artifactum/main/pyproject.toml&label=python)](https://pypi.org/project/artifactum/)
 [![Downloads](https://img.shields.io/pypi/dm/artifactum)](https://pypistats.org/packages/artifactum)
 [![Tests](https://github.com/atfm-io/artifactum/actions/workflows/tests.yml/badge.svg)](https://github.com/atfm-io/artifactum/actions/workflows/tests.yml)
 [![Coverage](https://codecov.io/gh/atfm-io/artifactum/graph/badge.svg)](https://codecov.io/gh/atfm-io/artifactum)
