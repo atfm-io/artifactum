@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2](https://github.com/atfm-io/artifactum/compare/v0.2.1...v0.2.2) (2026-11-13)
+
+
+### Documentation
+
+* badges for PyPI, Python versions, downloads, tests, coverage and license ([129f20e](https://github.com/atfm-io/artifactum/commit/129f20e321ede3eec975193cab1871bac2d34fe2))
+* downloads badge from shields.io, which renders before the counts exist ([6232ecd](https://github.com/atfm-io/artifactum/commit/6232ecd193f308c4f16108bae8f9fe4d485e2ca4))
+* shorter Python badge (&gt;= 3.10, from requires-python) ([bcd0f45](https://github.com/atfm-io/artifactum/commit/bcd0f452ffad65b1b00296fc9b82b80c558ecd8d))
+
 ## [0.2.1](https://github.com/atfm-io/artifactum/compare/v0.2.0...v0.2.1) (2026-11-13)
 
 
