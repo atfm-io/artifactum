@@ -193,8 +193,8 @@ packages:
   requires_python: '>=3.10'
 - pypi: ./
   name: artifactum
-  version: 0.1.0
-  sha256: 1cc87218d25d06d10156547d600b20109a078317a55d208a8199480417f4175a
+  version: 0.2.1
+  sha256: 34669456fee287185fd49c66ef6f85b2685e687e525fdbf2d2b5d8120e1155aa
   requires_dist:
   - httpx>=0.27
   - jsonargparse>=4.35
