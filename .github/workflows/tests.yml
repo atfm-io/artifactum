@@ -15,9 +15,12 @@ jobs:
         with:
           args: check
   test:
-    runs-on: ubuntu-latest
+    name: test (${{ matrix.os }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false  # one failure shouldn't hide how the other combinations fare
       matrix:
+        os: [ubuntu-latest, macos-latest]
         python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
