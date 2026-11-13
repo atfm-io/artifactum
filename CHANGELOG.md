@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/atfm-io/artifactum/compare/v0.2.2...v0.2.3) (2026-11-13)
+
+
+### Bug Fixes
+
+* **cli:** init always points at atfm.io ([a88fa0b](https://github.com/atfm-io/artifactum/commit/a88fa0bacd2448b6ea26695f16a31b05d284056d))
+
 ## [0.2.2](https://github.com/atfm-io/artifactum/compare/v0.2.1...v0.2.2) (2026-11-13)
 
 
