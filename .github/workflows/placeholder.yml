@@ -1,0 +1,20 @@
+# Publishes placeholder/atfm, which keeps the `atfm` name on PyPI and installs artifactum.
+# Run by hand (Actions → placeholder → Run workflow) after changing its version.
+name: placeholder
+on: workflow_dispatch
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/atfm/
+    permissions:
+      id-token: write   # PyPI trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade build
+      - run: python -m build placeholder/atfm --outdir dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
