@@ -34,29 +34,6 @@ def test_cache_path_property(tmp_path: Path) -> None:
     assert config.cache_path == tmp_path / "my-cache"
 
 
-def test_falls_back_to_pre_rename_config(tmp_path, monkeypatch):
-    import artifactum.config as cfg
-
-    new, legacy = tmp_path / ".artifactum" / "config.toml", tmp_path / ".dregs" / "config.toml"
-    monkeypatch.setattr(cfg, "_CONFIG_PATH", new)
-    monkeypatch.setattr(cfg, "_LEGACY_CONFIG_PATH", legacy)
-    save_config(Config(api_token="old-token", server_url="https://old.example.com"), legacy)
-
-    # load_config's default argument was bound at import, so pass the patched path explicitly
-    assert cfg.load_config(new).api_token == "old-token"
-
-    save_config(Config(api_token="new-token"), new)
-    assert cfg.load_config(new).api_token == "new-token"  # the new file wins once it exists
-
-
-def test_old_hosted_address_is_read_as_the_new_one(tmp_path: Path) -> None:
-    path = tmp_path / "config.toml"
-    path.write_text('[default]\napi_token = "t"\nserver_url = "https://dregs.chrisbcole.me/"\n')
-    assert load_config(path).server_url == "https://atfm.io"
-    path.write_text('[default]\napi_token = "t"\nserver_url = "https://registry.acme.internal"\n')
-    assert load_config(path).server_url == "https://registry.acme.internal"
-
-
 def test_a_config_from_before_local_storage_keeps_its_bucket(tmp_path: Path) -> None:
     path = tmp_path / "config.toml"
     path.write_text('[default]\napi_token = "t"\ngcs_bucket = "gs://lab/atfm"\n')

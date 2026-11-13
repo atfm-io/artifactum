@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from rich.console import Console
+from rich.markup import escape
 from rich.prompt import Prompt
 
 from artifactum.config import _CONFIG_PATH, DEFAULT_SERVER_URL, Config, load_config, save_config
@@ -52,12 +53,7 @@ def _ask(current: Config, token: str | None, storage: str | None) -> Config:
         Prompt.ask(f"API token (from {server_url.rstrip('/')}/settings)", password=True) or current.api_token
     )
     if not storage:
-        console.print(
-            "\nFiles stay in storage you control: a directory (to try it on your own, ~/atfm-files; for a team, a"
-            " shared one everyone reaches at the same path, like /groups/lab/atfm), or a Google Cloud Storage"
-            " bucket (gs://my-team-bucket/atfm). You can move later with `atfm storage move`."
-        )
-        storage = Prompt.ask("Storage location", default=current.storage or "~/atfm-files")
+        storage = _ask_storage(current.storage)
     cache_dir = Prompt.ask("Local cache directory", default=current.cache_dir)
     cache_limit_gb_str = Prompt.ask("Cache size limit (GB)", default=f"{current.cache_limit_gb:g}")
     try:
@@ -74,6 +70,31 @@ def _ask(current: Config, token: str | None, storage: str | None) -> Config:
         cache_dir=cache_dir,
         cache_limit_gb=cache_limit_gb,
     )
+
+
+DEFAULT_LOCAL_STORAGE = "~/atfm-files"
+
+
+def _ask_storage(current: str) -> str:
+    """A directory or a Google Cloud Storage bucket. Only the directory gets a suggested
+    location; a bucket is always the team's own, so there's nothing sensible to suggest."""
+    console.print(
+        "\nArtifactum keeps your files in storage you control:\n"
+        "  [bold]1[/bold]  A directory: to try it on your own, or one your team shares at the same path"
+        " on every machine (e.g. /groups/lab/atfm)\n"
+        "  [bold]2[/bold]  A Google Cloud Storage bucket\n"
+        "You can move later with `atfm storage move`."
+    )
+    in_bucket = current.startswith("gs://")
+    choice = Prompt.ask("Where should files go?", choices=["1", "2"], default="2" if in_bucket else "1")
+    if choice == "1":
+        local = current if current and not in_bucket else DEFAULT_LOCAL_STORAGE
+        return Prompt.ask("Directory", default=local.removeprefix("file://"))
+    while True:
+        bucket = Prompt.ask("Bucket and folder (gs://bucket/folder)", default=current if in_bucket else None)
+        if bucket and bucket.startswith("gs://") and len(bucket) > len("gs://"):
+            return bucket
+        console.print("[yellow]Give a bucket location starting with gs://, like gs://my-team-bucket/atfm[/yellow]")
 
 
 def _ready_storage(location: str) -> None:
@@ -93,4 +114,4 @@ def _ready_storage(location: str) -> None:
         backend.check()
         console.print(f"[green]✓[/green] Files will be stored in {backend.display(backend.root)}")
     except ArtifactumError as e:
-        console.print(f"[yellow]{e}[/yellow]")
+        console.print(f"[yellow]{escape(str(e))}[/yellow]")

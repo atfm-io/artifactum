@@ -43,7 +43,6 @@ def isolated_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     home = tmp_path / "home" / ".artifactum"
     monkeypatch.setattr(config_mod, "_CONFIG_PATH", home / "config.toml")
     monkeypatch.setattr(init_cmd, "_CONFIG_PATH", home / "config.toml")
-    monkeypatch.setattr(config_mod, "_LEGACY_CONFIG_PATH", tmp_path / "home" / ".dregs" / "config.toml")
     monkeypatch.setattr(config_mod, "DEFAULT_CACHE_DIR", str(home / "cache"))
     return home
 
