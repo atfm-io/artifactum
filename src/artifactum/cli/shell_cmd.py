@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import NoReturn
 
 from rich.console import Console
+from rich.markup import escape
 
 from artifactum.exceptions import ArtifactumError
 
@@ -30,7 +31,7 @@ err = Console(stderr=True)
 
 def fail(message: str) -> NoReturn:
     """Print an error on stderr and exit with status 1."""
-    err.print(f"[red]{message}[/red]")
+    err.print(f"[red]{escape(message)}[/red]")  # escaped: messages can contain [brackets], like artifactum[gcs]
     raise SystemExit(1)
 
 
