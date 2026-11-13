@@ -1,5 +1,12 @@
 # Artifactum · `atfm`
 
+[![PyPI](https://img.shields.io/pypi/v/artifactum)](https://pypi.org/project/artifactum/)
+[![Python](https://img.shields.io/pypi/pyversions/artifactum)](https://pypi.org/project/artifactum/)
+[![Downloads](https://static.pepy.tech/badge/artifactum/month)](https://pepy.tech/project/artifactum)
+[![Tests](https://github.com/atfm-io/artifactum/actions/workflows/tests.yml/badge.svg)](https://github.com/atfm-io/artifactum/actions/workflows/tests.yml)
+[![Coverage](https://codecov.io/gh/atfm-io/artifactum/graph/badge.svg)](https://codecov.io/gh/atfm-io/artifactum)
+[![License: MIT](https://img.shields.io/pypi/l/artifactum)](https://github.com/atfm-io/artifactum/blob/main/LICENSE)
+
 [atfm.io](https://atfm.io) · `pip install artifactum` · `import artifactum as atfm` · the `atfm` command
 
 A registry and lineage tracker for the files data teams produce: datasets, models, results and figures.

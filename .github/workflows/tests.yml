@@ -29,4 +29,11 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: pip install -e ".[dev]"
       # Coverage is reported by pytest-cov (settings in pyproject.toml)
-      - run: pytest -v
+      - run: pytest -v --cov-report=xml
+      # One upload is enough for the badge; the CODECOV_TOKEN secret comes from codecov.io
+      - uses: codecov/codecov-action@v5
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false
