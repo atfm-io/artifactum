@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "Chris Cole", email = "chris.c.1221@gmail.com"}]
-requires-python = ">= 3.11"
+requires-python = ">= 3.10"
 keywords = ["data lineage", "provenance", "artifacts", "reproducibility", "data versioning"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -14,6 +14,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -27,6 +28,7 @@ dependencies = [
     "textual>=0.70",
     "tomli-w>=1.0",
     "pyperclip>=1.8",
+    "tomli>=1.1; python_version < '3.11'",
 ]
 
 [project.optional-dependencies]
@@ -78,7 +80,7 @@ install-hooks = "pre-commit install"
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

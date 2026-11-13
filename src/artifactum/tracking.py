@@ -24,7 +24,7 @@ import uuid
 from collections.abc import Callable
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -35,7 +35,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 class Scope:
     name: str | None = None
     run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     inputs: list[str] = field(default_factory=list)
     # Set once the run (and its code snapshot) has been sent to the server
     run_registered: bool = False
@@ -109,7 +109,7 @@ def load_shell_run(run_id: str) -> Scope | None:
     return Scope(
         name=data.get("name"),
         run_id=data.get("run_id", run_id),
-        started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else datetime.now(UTC),
+        started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else datetime.now(timezone.utc),
         inputs=list(data.get("inputs", [])),
         run_registered=bool(data.get("registered")),
         state_path=path,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import pyperclip
@@ -22,7 +22,7 @@ def _age(dt_str: str | None) -> str:
         return "?"
     try:
         dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        delta = datetime.now(UTC) - dt
+        delta = datetime.now(timezone.utc) - dt
         s = int(delta.total_seconds())
         if s < 3600:
             return f"{s // 60}m"
