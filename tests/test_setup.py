@@ -96,7 +96,8 @@ def test_init_with_flags_asks_nothing_and_creates_the_folder(tmp_path: Path, mon
     files = tmp_path / "atfm-files"
     result = atfm("init", "--token", "atfm_abc", "--storage", str(files))
     assert result.exit_code == 0, result.output
-    assert files.is_dir() and f"Created {files}" in " ".join(result.stdout.split())
+    # Rich wraps at 80 columns, splitting long paths (macOS temp dirs) mid-path, so compare without whitespace
+    assert files.is_dir() and f"Created{files}" in "".join(result.stdout.split())
 
     config = load_config(config_path)
     assert (config.api_token, config.storage, config.server_url) == (
