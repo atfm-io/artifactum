@@ -104,3 +104,15 @@ def test_init_with_flags_asks_nothing_and_creates_the_folder(tmp_path: Path, mon
         f"file://{files.as_posix()}",
         "https://atfm.io",
     )
+
+
+def test_version_flag_prints_the_installed_version(capsys) -> None:
+    from importlib.metadata import version
+
+    import pytest
+
+    from artifactum.cli.main import main
+
+    with pytest.raises(SystemExit):
+        main(["--version"])
+    assert capsys.readouterr().out.strip() == f"atfm {version('artifactum')}"

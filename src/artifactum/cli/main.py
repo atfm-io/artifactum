@@ -261,7 +261,13 @@ COMMANDS: dict[str, Callable] = {
 
 
 def build_parser() -> ArgumentParser:
-    parser = ArgumentParser(prog="atfm", description="Artifactum: a registry and lineage tracker for your data files.")
+    from importlib.metadata import version
+
+    parser = ArgumentParser(
+        prog="atfm",
+        description="Artifactum: a registry and lineage tracker for your data files.",
+        version=version("artifactum"),
+    )
     commands = parser.add_subcommands(dest="command")
 
     p = _command(commands, "get", shell_cmd.get)
