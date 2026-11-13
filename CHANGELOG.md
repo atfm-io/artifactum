@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.4](https://github.com/atfm-io/artifactum/compare/v0.2.3...v0.2.4) (2026-11-13)
+
+
+### Bug Fixes
+
+* **cli:** Ctrl-C cancels quietly instead of printing a traceback ([dafc61a](https://github.com/atfm-io/artifactum/commit/dafc61ae4f755492179b6e1b9ff994adf732d988))
+* **cli:** init asks for a directory or a bucket, and forgets the old ~/.dregs setup ([dc8e72e](https://github.com/atfm-io/artifactum/commit/dc8e72ec32f20dd300caae18ab1131b25a2b5201))
+* **cli:** show [brackets] in messages, so the hint reads pip install 'artifactum[gcs]' ([e73d30d](https://github.com/atfm-io/artifactum/commit/e73d30df75508a92fdb33d94aaaa5e61b0465eff))
+
 ## [0.2.3](https://github.com/atfm-io/artifactum/compare/v0.2.2...v0.2.3) (2026-11-13)
 
 

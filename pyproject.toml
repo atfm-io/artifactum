@@ -1,6 +1,6 @@
 [project]
 name = "artifactum"
-version = "0.2.3"
+version = "0.2.4"
 description = "A registry and lineage tracker for the files data teams produce"
 readme = "README.md"
 license = "MIT"
