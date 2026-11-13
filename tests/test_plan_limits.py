@@ -29,8 +29,8 @@ def test_client_raises_plan_limit_error_and_warns_once(
     monkeypatch.setattr(client_mod, "_warned", set())
 
     with caplog.at_level("WARNING", logger="artifactum"):
-        assert c.register_artifact(hash="a", gcs_url="g", size_bytes=1) == "AAAAAAAA"
-        assert c.register_artifact(hash="b", gcs_url="g", size_bytes=1) == "BBBBBBBB"
+        assert c.register_artifact(hash="a", gcs_url="g", size_bytes=1).id == "AAAAAAAA"
+        assert c.register_artifact(hash="b", gcs_url="g", size_bytes=1).id == "BBBBBBBB"
     assert len([r for r in caplog.records if "artifacts" in r.getMessage()]) == 1
 
     with pytest.raises(PlanLimitError) as exc:

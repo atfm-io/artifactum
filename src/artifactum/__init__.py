@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import mimetypes
+import sys
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -86,9 +87,9 @@ def publish(
     ``docs`` is markdown documentation shown on the artifact's page: either the
     text itself or a path to a markdown file (e.g. a README next to your code).
 
-    ``name`` says what this is a version of: publishing again under the same name
-    records a new version, and anything built from the old one is flagged stale. It
-    defaults to the file name, so give one when file names are generic (``data.csv``).
+    ``name`` makes this a version: artifacts published under the same name are versions
+    of each other, and anything built from an older version is flagged stale. Without a
+    name there are no versions, even when another artifact has the same file name.
     """
     return _publish(path, parents=parents, parent=parent, description=description, tags=tags, docs=docs, name=name)
 
@@ -134,7 +135,7 @@ def _publish(
     # The first publish in a scope sends the full run record; later ones just reference it.
     run = None if scope.run_registered else _capture_run(scope, config, storage, environment, code_path)
 
-    artifact_id = client.register_artifact(
+    registered = client.register_artifact(
         hash=content_hash,
         gcs_url=url,
         size_bytes=size_bytes,
@@ -149,8 +150,18 @@ def _publish(
     )
     scope.mark_registered()
 
-    storage.upload(local, url)
-    return artifact_id
+    if registered.existing:
+        # Same content as an artifact already in the registry: that one stands as it was
+        _say(f"{local.name} is already published as {registered.id} (same content), so nothing was uploaded")
+    else:
+        storage.upload(local, url)
+        _say(f"Published {local.name} as {registered.id}")
+    return registered.id
+
+
+def _say(message: str) -> None:
+    """A line on stderr, so scripts show what was published without touching their stdout."""
+    print(f"artifactum: {message}", file=sys.stderr)
 
 
 def _read_docs(docs: str | Path | None) -> str | None:

@@ -128,6 +128,9 @@ class FakeServer:
                     }
                 },
             )
+        same = next((a for a in self.artifacts.values() if a["hash"] == body["hash"]), None)
+        if same:  # like the server: identical content returns the existing artifact, unchanged
+            return httpx.Response(201, json={"id": same["id"], "existing": True})
         missing = [p for p in body.get("parent_ids", []) if p not in self.artifacts]
         if missing:
             return httpx.Response(422, json={"detail": f"Unknown parent {missing[0]}"})
@@ -145,12 +148,12 @@ class FakeServer:
             "description": body.get("description"),
             "tags": body.get("tags", []),
             "docs": body.get("docs"),
-            "name": body.get("name") or body["gcs_url"].rsplit("/", 1)[-1],
+            "name": body.get("name"),
             "parent_ids": body.get("parent_ids", []),
             "run_id": body.get("run_id"),
             "created_at": f"2026-11-10T12:{seq:02d}:00Z",
         }
-        return httpx.Response(201, json={"id": artifact_id})
+        return httpx.Response(201, json={"id": artifact_id, "existing": False})
 
 
 class FakeBucket:

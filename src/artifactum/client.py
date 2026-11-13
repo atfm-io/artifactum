@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import httpx
 
@@ -24,6 +24,12 @@ class ArtifactMeta:
     name: str | None = None
     superseded_by: str | None = None
     stale: bool = False
+
+
+class Registered(NamedTuple):
+    id: str
+    # The same content was already registered: this is its ID, and nothing about it changed
+    existing: bool = False
 
 
 @dataclass
@@ -123,7 +129,7 @@ class ArtifactumClient:
         run: dict[str, Any] | None = None,
         docs: str | None = None,
         name: str | None = None,
-    ) -> str:
+    ) -> Registered:
         body: dict[str, Any] = {
             "hash": hash,
             "gcs_url": gcs_url,
@@ -148,7 +154,7 @@ class ArtifactumClient:
         data = self._post("/artifacts", body)
         if data.get("warning"):
             _warn_once(data["warning"])
-        return data["id"]
+        return Registered(data["id"], bool(data.get("existing")))
 
     def get_artifact(self, artifact_id: str) -> ArtifactMeta:
         data = self._get(f"/artifacts/{canonical_id(artifact_id)}")

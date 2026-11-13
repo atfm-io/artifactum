@@ -187,3 +187,31 @@ def test_export_downloads_the_whole_registry(registry: Registry, tmp_path: Path)
 
     registry.configure(api_token="atfm_revoked")
     assert atfm("export", "-o", str(tmp_path / "again.zip")).exit_code == 1
+
+
+def test_files_that_share_a_name_are_not_versions_unless_named(registry: Registry, tmp_path: Path, capsys) -> None:
+    """Script 1 writes test.csv; script 2 reads it and writes a different test.csv."""
+    first = artifactum.publish(write(tmp_path / "one" / "test.csv", "a\n1\n"))
+    assert f"artifactum: Published test.csv as {first}" in capsys.readouterr().err
+
+    second = artifactum.publish(write(tmp_path / "two" / "test.csv", "a\n1\n2\n"), parents=[first])
+    assert registry.server.artifacts[first]["name"] is None
+    assert registry.server.artifacts[second]["name"] is None
+
+    named = artifactum.publish(write(tmp_path / "three" / "test.csv", "a\n3\n"), name="scores")
+    assert registry.server.artifacts[named]["name"] == "scores"
+
+
+def test_publishing_the_same_content_again_says_so_and_uploads_nothing(
+    registry: Registry, tmp_path: Path, capsys
+) -> None:
+    original = artifactum.publish(write(tmp_path / "a" / "out.csv", "same\n"))
+    capsys.readouterr()
+
+    again = artifactum.publish(write(tmp_path / "b" / "copy.csv", "same\n"), description="ignored")
+    assert again == original
+    err = capsys.readouterr().err
+    assert f"copy.csv is already published as {original} (same content), so nothing was uploaded" in err
+    stored = registry.server.artifacts[original]["gcs_url"]
+    assert registry.stored(stored).exists()
+    assert not registry.stored(stored.replace("out.csv", "copy.csv")).exists()  # no second copy

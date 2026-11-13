@@ -75,6 +75,17 @@ atfm.publish(
 # C4LN9E2A is recorded as the parent automatically, along with the git commit and code.
 ```
 
+Each publish prints what happened on stderr: `artifactum: Published features.parquet as F3TR8QX1`, or, when
+identical content is already in the registry, that it was found and nothing was uploaded.
+
+To track versions of something, give it a name. Artifacts published under the same name are versions of
+each other, and anything built from an older version is flagged as stale. Without a name there are no
+versions, even if two files share a file name.
+
+```python
+atfm.publish("model.pkl", name="churn-model")
+```
+
 From the shell (bash, R, Nextflow, Snakemake, ...):
 
 ```bash

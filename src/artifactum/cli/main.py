@@ -281,7 +281,9 @@ def build_parser() -> ArgumentParser:
     p.add_argument("-t", "--tag", action="append", help="Tag (repeatable)")
     p.add_argument("-p", "--parent", action="append", help="Parent artifact ID (repeatable). Default: the run's inputs")
     p.add_argument("--no-parents", dest="no_parents", action="store_true", help="Record no parents, even inside a run")
-    p.add_argument("-n", "--name", help="What this is a version of. Without it, the file name")
+    p.add_argument(
+        "-n", "--name", help="Make this a new version of what was published under this name. Without it, no versions"
+    )
     p.add_argument("--docs", type=Path_fr, help="Markdown file shown on the artifact's page")
     p.add_argument("--code", type=Path_fr, help="The script that made it, snapshotted as provenance")
     _json(p)

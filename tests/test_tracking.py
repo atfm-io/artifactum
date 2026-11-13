@@ -7,7 +7,7 @@ import pytest
 
 import artifactum
 from artifactum import tracking
-from artifactum.client import ArtifactMeta
+from artifactum.client import ArtifactMeta, Registered
 from artifactum.config import Config
 from artifactum.provenance import git_info, redact_argv, strip_credentials
 
@@ -35,9 +35,9 @@ class FakeClient:
             description=None,
         )
 
-    def register_artifact(self, **kwargs: Any) -> str:
+    def register_artifact(self, **kwargs: Any) -> Registered:
         FakeClient.registered.append(kwargs)
-        return f"OUT{len(FakeClient.registered):05d}"
+        return Registered(f"OUT{len(FakeClient.registered):05d}")
 
 
 @pytest.fixture
