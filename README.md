@@ -110,3 +110,7 @@ Browsing from the terminal:
 atfm log K9PWQM7T      # upstream lineage
 atfm browse            # interactive browser (preview: recent artifacts, no search yet)
 ```
+
+## License
+
+MIT. See [LICENSE](https://github.com/atfm-io/artifactum/blob/main/LICENSE).

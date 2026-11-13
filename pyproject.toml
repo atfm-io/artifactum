@@ -3,6 +3,8 @@ name = "artifactum"
 version = "0.1.0"
 description = "A registry and lineage tracker for the files data teams produce"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "Chris Cole", email = "chris.c.1221@gmail.com"}]
 requires-python = ">= 3.11"
 keywords = ["data lineage", "provenance", "artifacts", "reproducibility", "data versioning"]
@@ -49,7 +51,7 @@ packages = ["src/artifactum"]
 
 # The source archive is the package, its tests and docs; not the dev tooling
 [tool.hatch.build.targets.sdist]
-include = ["src/artifactum", "tests", "README.md", "CHANGELOG.md", "CONTRIBUTING.md"]
+include = ["src/artifactum", "tests", "LICENSE", "README.md", "CHANGELOG.md", "CONTRIBUTING.md"]
 
 # ── Development environment (pixi) ───────────────────────────────────────────────
 
