@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/atfm-io/artifactum/compare/v0.2.0...v0.2.1) (2026-11-13)
+
+
+### Documentation
+
+* mention the atfm placeholder package ([aedfe83](https://github.com/atfm-io/artifactum/commit/aedfe83576a87ad98c5cb9e6328bf41dfac8edde))
+* say why the atfm placeholder exists ([c0ffe19](https://github.com/atfm-io/artifactum/commit/c0ffe193d8f98990f313a00621ac766fb419e6de))
+
 ## [0.2.0](https://github.com/atfm-io/artifactum/compare/v0.1.0...v0.2.0) (2026-11-13)
 
 
