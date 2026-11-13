@@ -194,7 +194,7 @@ packages:
 - pypi: ./
   name: artifactum
   version: 0.1.0
-  sha256: 27fbc319dda2aabcda0a0b68f19b456824d8d1ebc3c59e5be8846d6ae29834fc
+  sha256: 5932adeb9146547022b943c8fd5a39988c8d15022da04e0c42e29a3699f6e8e6
   requires_dist:
   - httpx>=0.27
   - jsonargparse>=4.35

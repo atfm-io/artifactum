@@ -5,6 +5,19 @@ description = "A registry and lineage tracker for the files data teams produce"
 readme = "README.md"
 authors = [{name = "Chris Cole", email = "chris.c.1221@gmail.com"}]
 requires-python = ">= 3.11"
+keywords = ["data lineage", "provenance", "artifacts", "reproducibility", "data versioning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
     "httpx>=0.27",
     "jsonargparse>=4.35",
@@ -33,6 +46,10 @@ requires = ["hatchling"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/artifactum"]
+
+# The source archive is the package, its tests and docs; not the dev tooling
+[tool.hatch.build.targets.sdist]
+include = ["src/artifactum", "tests", "README.md", "CHANGELOG.md", "CONTRIBUTING.md"]
 
 # ── Development environment (pixi) ───────────────────────────────────────────────
 
