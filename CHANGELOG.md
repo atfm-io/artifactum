@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/atfm-io/artifactum/compare/v0.2.4...v0.3.0) (2026-11-13)
+
+
+### Features
+
+* say what publish did, and only version artifacts given a name ([c76bd38](https://github.com/atfm-io/artifactum/commit/c76bd38aa00158c8732fe361b732cc7adcbd40a4))
+
 ## [0.2.4](https://github.com/atfm-io/artifactum/compare/v0.2.3...v0.2.4) (2026-11-13)
 
 
