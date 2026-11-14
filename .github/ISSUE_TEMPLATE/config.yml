@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or how-to
+    url: https://atfm.io/docs
+    about: The docs cover setup, storage, lineage and the CLI. Still stuck? Open a bug report or email hello@atfm.io.
+  - name: Security problem
+    url: https://github.com/atfm-io/artifactum/blob/main/SECURITY.md
+    about: Please report security issues privately by email, not in a public issue.
+  - name: Account, billing or private feedback
+    url: mailto:hello@atfm.io
+    about: For anything about your account, plan or data, email us (or use Feedback on atfm.io).

@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest something Artifactum should do
+labels: ["enhancement", "needs triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The problem or workflow, in your own words, more than a particular solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you'd like it to work, if you have an idea.
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you handle it today?
+      description: Workarounds, other tools, or "I don't".
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of Artifactum?
+      options:
+        - The atfm command
+        - Python (import artifactum)
+        - Storage
+        - Lineage, versions and stale flags
+        - The website (atfm.io)
+        - Something else

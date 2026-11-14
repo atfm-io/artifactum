@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in Artifactum doesn't work as it should
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Please **don't paste API keys, file contents or confidential names**: this
+        issue is public. For a security problem, email hello@atfm.io instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, and what you saw (including any error message).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The commands or code that show it, as small as you can make them.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Artifactum version
+      description: The output of `atfm --version`
+      placeholder: atfm 0.4.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Python version and operating system
+      placeholder: Python 3.12, macOS 15
+  - type: dropdown
+    id: storage
+    attributes:
+      label: Where your files are stored
+      options:
+        - A directory (local or shared)
+        - Google Cloud Storage
+        - Not sure / not relevant
+  - type: textarea
+    id: logs
+    attributes:
+      label: Full error output
+      description: Paste the whole traceback or terminal output, if there is one.
+      render: text
