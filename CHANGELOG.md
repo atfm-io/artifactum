@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/atfm-io/artifactum/compare/v0.4.0...v0.5.0) (2026-11-14)
+
+
+### Features
+
+* **client:** wait and retry when the server rate limits ([053a3c5](https://github.com/atfm-io/artifactum/commit/053a3c5ba6181d36bb8ead5f16746fe39f97e393))
+
 ## [0.4.0](https://github.com/atfm-io/artifactum/compare/v0.3.0...v0.4.0) (2026-11-14)
 
 
