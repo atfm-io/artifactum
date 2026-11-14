@@ -132,7 +132,7 @@ def test_a_wrong_token_says_so(registry: Registry, tmp_path: Path) -> None:
         artifactum.publish(write(tmp_path / "x.csv", "x"))
 
     result = atfm("get", "ART00001")
-    assert result.exit_code == 1 and "Invalid or missing API token" in result.stderr
+    assert result.exit_code == 1 and "Invalid or missing API key" in result.stderr
 
 
 def test_an_unknown_id_is_a_clear_error_not_a_traceback(registry: Registry) -> None:
@@ -215,3 +215,9 @@ def test_publishing_the_same_content_again_says_so_and_uploads_nothing(
     stored = registry.server.artifacts[original]["gcs_url"]
     assert registry.stored(stored).exists()
     assert not registry.stored(stored.replace("out.csv", "copy.csv")).exists()  # no second copy
+
+
+def test_a_read_only_key_says_so_when_publishing(registry: Registry, tmp_path: Path) -> None:
+    registry.server.read_only_key = "CI"
+    with pytest.raises(AuthError, match='The API key "CI" is read-only'):
+        artifactum.publish(write(tmp_path / "out.csv", "x\n"))

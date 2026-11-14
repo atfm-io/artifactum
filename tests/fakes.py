@@ -30,19 +30,25 @@ class FakeServer:
     # Set to a number to make the server refuse publishes past it (402), like a plan limit
     artifact_limit: int | None = None
     down: bool = False
+    # Set to answer like the real server does for a read-only API key: reads work, writes 403
+    read_only_key: str | None = None
 
     def publish_count(self) -> int:
         return len(self.artifacts)
 
     # ── Versions, worked out the way the real server does ────────────────────────
-    def _newest(self, name: str) -> str:
-        same = [a for a in self.artifacts.values() if a["name"] == name]
-        return max(same, key=lambda a: a["seq"])["id"]
+    def _newest(self, a: dict[str, Any]) -> str:
+        if a["name"] is None:  # no name, no versions
+            return a["id"]
+        same = [b for b in self.artifacts.values() if b["name"] == a["name"]]
+        return max(same, key=lambda b: b["seq"])["id"]
 
     def _view(self, a: dict[str, Any]) -> dict[str, Any]:
-        newest = self._newest(a["name"])
+        newest = self._newest(a)
         superseded = newest if newest != a["id"] else None
-        stale = superseded is None and any(self._newest(self.artifacts[p]["name"]) != p for p in a["parent_ids"])
+        stale = superseded is None and any(
+            self._newest(self.artifacts[p]) != p and self.artifacts[p]["name"] != a["name"] for p in a["parent_ids"]
+        )
         return {k: v for k, v in a.items() if k not in ("seq", "parent_ids", "run_id")} | {
             "superseded_by": superseded,
             "stale": stale,
@@ -56,6 +62,12 @@ class FakeServer:
         if request.headers.get("authorization") != f"Bearer {TOKEN}":
             return httpx.Response(401, json={"detail": "Invalid token"})
         path, method = request.url.path, request.method
+        if self.read_only_key and method not in ("GET", "HEAD"):
+            detail = (
+                f'The API key "{self.read_only_key}" is read-only. '
+                "Use a key with full access to publish or change things."
+            )
+            return httpx.Response(403, json={"detail": detail})
 
         if method == "POST" and path == "/artifacts":
             return self._register(json.loads(request.content))

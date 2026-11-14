@@ -103,7 +103,17 @@ class ArtifactumClient:
             parts = r.url.path.strip("/").split("/")
             raise ArtifactNotFoundError(parts[1] if len(parts) > 1 and parts[0] == "artifacts" else parts[-1])
         if r.status_code == 401:
-            raise AuthError("Invalid or missing API token.")
+            raise AuthError(
+                "Invalid or missing API key. It may have been revoked: "
+                "make a new one in Settings, then run `atfm init`."
+            )
+        if r.status_code == 403:
+            # e.g. publishing with a read-only key: the server says which key and why
+            try:
+                detail = r.json().get("detail")
+            except ValueError:
+                detail = None
+            raise AuthError(detail if isinstance(detail, str) else "This API key isn't allowed to do that.")
         if r.status_code == 402:
             detail = (r.json() if r.headers.get("content-type", "").startswith("application/json") else {}).get(
                 "detail"
