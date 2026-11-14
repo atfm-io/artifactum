@@ -217,13 +217,19 @@ class ArtifactumClient:
 
     # ── Moving storage ───────────────────────────────────────────────────────────────
 
-    def files_under(self, root: str) -> dict[str, Any]:
-        """Your stored files under a location: {"artifacts": [{id, hash, url}], "code": [{hash, url}]}"""
+    def files_under(self, root: str, team: bool = False) -> dict[str, Any]:
+        """Stored files under a location, yours or (team admins) the team's:
+        {"artifacts": [{id, hash, url}], "code": [{hash, url}]}"""
+        if team:
+            return self._get("/artifacts/storage/files", prefix=root, team="true")
         return self._get("/artifacts/storage/files", prefix=root)
 
-    def move_storage(self, old_root: str, new_root: str) -> dict[str, int]:
-        """Repoint your records from one location to another, once the files have been copied."""
-        return self._post("/artifacts/storage/move", {"from_prefix": old_root, "to_prefix": new_root})
+    def move_storage(self, old_root: str, new_root: str, team: bool = False) -> dict[str, int]:
+        """Repoint records from one location to another, once the files have been copied."""
+        body: dict[str, Any] = {"from_prefix": old_root, "to_prefix": new_root}
+        if team:
+            body["team"] = True
+        return self._post("/artifacts/storage/move", body)
 
     @staticmethod
     def _meta(data: dict[str, Any]) -> ArtifactMeta:

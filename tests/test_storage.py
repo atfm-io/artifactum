@@ -174,3 +174,20 @@ def test_moving_needs_a_real_new_place(registry: Registry, tmp_path: Path) -> No
     assert same.exit_code == 1 and "already in" in flat(same.stderr)
     missing = atfm("storage", "move", str(tmp_path / "not-made-yet"))
     assert missing.exit_code == 1 and "doesn't exist" in flat(missing.stderr)
+
+
+@pytest.mark.parametrize("registry", ["local"], indirect=True)
+def test_a_team_admin_moves_the_teams_files(registry: Registry, tmp_path: Path) -> None:
+    _publish_with_lineage(tmp_path)
+    shared = tmp_path / "team-share"
+    shared.mkdir()
+    result = atfm("storage", "move", str(shared), "--team")
+    assert result.exit_code == 0, result.stderr
+    assert registry.server.listed_as_team and registry.server.moved_as_team
+    out = flat(result.stdout)
+    assert "Moved 2 artifacts" in out and f"atfm storage move {shared}" in out  # what to tell teammates
+
+    # Without --team, only your own files are asked for
+    (tmp_path / "back").mkdir()
+    assert atfm("storage", "move", str(tmp_path / "back")).exit_code == 0
+    assert not registry.server.listed_as_team

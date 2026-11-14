@@ -27,8 +27,13 @@ def init(token: str | None = None, storage: str | None = None, server: str | Non
     run_init(token=token, storage=storage, server=server)
 
 
-def storage_move(location: str) -> None:
-    """Copy the files you've published to new storage, and point their records there."""
+def storage_move(location: str, team: bool = False) -> None:
+    """Copy the files you've published to new storage, and point their records there.
+
+    With --team, a team admin moves everything the team has published, and the new location
+    becomes the team's storage. Teammates then run `atfm storage move` with the same location:
+    their files are already there, so it only points their own setup at it.
+    """
     from dataclasses import replace
 
     from artifactum.client import ArtifactumClient
@@ -37,12 +42,14 @@ def storage_move(location: str) -> None:
     from artifactum.storage.move import move_files
 
     config = load_config()
-    with console.status("Copying your files…") as status:
+    whose = "the team's" if team else "your"
+    with console.status(f"Copying {whose} files…") as status:
         moved = move_files(
             ArtifactumClient(config),
             config.storage,
             location,
             on_file=lambda url: status.update(f"Copied {url.rsplit('/', 1)[-1]}"),
+            team=team,
         )
     save_config(replace(config, storage=normalise_location(location)))
     console.print(
@@ -50,6 +57,11 @@ def storage_move(location: str) -> None:
         f" snapshot{'s' * (moved.code != 1)} to {moved.new}, and new files will go there too."
     )
     console.print(f"  The old copies in {moved.old} are untouched; delete them once you're happy.")
+    if team:
+        console.print(
+            f"  Ask your teammates to run [bold]atfm storage move {location}[/bold] too. Their files are"
+            " already there, so it just points their setup at the new location."
+        )
 
 
 def browse() -> None:
@@ -303,8 +315,10 @@ def build_parser() -> ArgumentParser:
     storage = ArgumentParser(description="Manage where your files are stored.")
     commands.add_subcommand("storage", storage, help="Manage where your files are stored.")
     moves = storage.add_subcommands(dest="action")
-    _command(moves, "move", storage_move).add_argument(
-        "location", help="The new location: a directory (e.g. /groups/lab/atfm) or gs://bucket/path"
+    p = _command(moves, "move", storage_move)
+    p.add_argument("location", help="The new location: a directory (e.g. /groups/lab/atfm) or gs://bucket/path")
+    p.add_argument(
+        "--team", action="store_true", help="Team admins: move everything the team has published, not just yours"
     )
     _command(commands, "browse", browse)
     for name, fn in (("log", log), ("describe", describe)):

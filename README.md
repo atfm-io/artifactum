@@ -49,12 +49,27 @@ path**, since the registry records where each file is. Files are stored by conte
 For Google Cloud Storage, each person signs in once with `gcloud auth application-default login` and needs
 read and write access to the bucket.
 
-To try Artifactum on your own, a folder like `~/atfm-files` is enough. When you bring in your team, move
-what you've published to shared storage; the files are copied, checked against their hashes and their
-records updated, and the old copies are left in place:
+To try Artifactum on your own, a folder like `~/atfm-files` is enough.
+
+### Moving your storage
+
+`atfm storage move` copies files to a new location, checks each copy against its hash, and only then
+points their records there. IDs and lineage don't change, and the old copies are left in place for you to
+delete. If a move stops part way, nothing is repointed: fix the problem and run it again.
+
+When you bring in your team, move what you've published to shared storage:
 
 ```bash
 atfm storage move /groups/lab/atfm      # or gs://my-team-bucket/atfm
+```
+
+That moves only your own files. To move a whole team, a **team admin** moves everything the team has
+published (from a machine that can reach both locations), which also makes it the team's storage, and then
+each teammate points their own setup at it. Their files are already there, so nothing is copied twice:
+
+```bash
+atfm storage move gs://my-team-bucket/atfm --team   # the admin, once
+atfm storage move gs://my-team-bucket/atfm          # then each teammate
 ```
 
 ## Use

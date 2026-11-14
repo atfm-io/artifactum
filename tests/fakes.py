@@ -32,6 +32,9 @@ class FakeServer:
     down: bool = False
     # Set to answer like the real server does for a read-only API key: reads work, writes 403
     read_only_key: str | None = None
+    # What the last storage listing / move asked for (yours, or the team's with --team)
+    listed_as_team: bool = False
+    moved_as_team: bool = False
 
     def publish_count(self) -> int:
         return len(self.artifacts)
@@ -88,9 +91,11 @@ class FakeServer:
 
         if method == "GET" and path == "/artifacts/storage/files":
             root = request.url.params["prefix"].rstrip("/") + "/"
+            self.listed_as_team = request.url.params.get("team") == "true"
             return httpx.Response(200, json=self._files_under(root))
         if method == "POST" and path == "/artifacts/storage/move":
             body = json.loads(request.content)
+            self.moved_as_team = bool(body.get("team"))
             return httpx.Response(200, json=self._move(body["from_prefix"], body["to_prefix"]))
 
         m = re.fullmatch(r"/artifacts/([A-Z0-9]{8})(/run|/lineage)?", path)
