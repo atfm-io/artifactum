@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/atfm-io/artifactum/compare/v0.3.0...v0.4.0) (2026-11-14)
+
+
+### Features
+
+* **cli:** atfm storage move --team for team admins ([b47f104](https://github.com/atfm-io/artifactum/commit/b47f104812a4ec026b4f465954d53ab0941b0dd1))
+
+
+### Bug Fixes
+
+* **client:** clear messages for revoked and read-only API keys ([4440835](https://github.com/atfm-io/artifactum/commit/44408350ce13355b179f4c914965c4393e7b5ac5))
+
+
+### Documentation
+
+* issue templates for bugs and feature requests, and a security policy ([98430a9](https://github.com/atfm-io/artifactum/commit/98430a9c230c37a8214ba77321c69c562fe65a11))
+
 ## [0.3.0](https://github.com/atfm-io/artifactum/compare/v0.2.4...v0.3.0) (2026-11-13)
 
 
