@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -59,25 +61,49 @@ def _warn_once(message: str) -> None:
         logging.getLogger("artifactum").warning("artifactum: %s", message)
 
 
+# Give up after this long being rate limited in a row (a stuck job shouldn't wait forever)
+MAX_RATE_LIMIT_WAIT = 600.0
+_sleep = time.sleep  # replaced in tests
+
+
+def _retry_after(r: httpx.Response) -> float:
+    """Seconds the server asks us to wait (Retry-After), within sensible bounds."""
+    try:
+        return min(max(float(r.headers.get("retry-after", "5")), 1.0), 60.0)
+    except ValueError:
+        return 5.0
+
+
 class ArtifactumClient:
     def __init__(self, config: Config):
         self._base = config.server_url.rstrip("/")
         self._headers = {"Authorization": f"Bearer {config.api_token}"}
 
+    def _send(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
+        """One request, waiting and retrying while the server says it's rate limited (429).
+
+        A pipeline publishing in a tight loop is slowed to the pace the server allows rather
+        than failing; past MAX_RATE_LIMIT_WAIT seconds of waiting, the 429 is raised as an error.
+        """
+        waited = 0.0
+        while True:
+            with httpx.Client(headers=self._headers) as c:
+                r = c.request(method, f"{self._base}{path}", **kwargs)
+            if r.status_code != 429 or waited >= MAX_RATE_LIMIT_WAIT:
+                return r
+            delay = _retry_after(r)
+            print(f"artifactum: the server is rate limiting this account; retrying in {delay:g}s", file=sys.stderr)
+            _sleep(delay)
+            waited += delay
+
     def _get(self, path: str, **params: Any) -> Any:
-        with httpx.Client(headers=self._headers) as c:
-            r = c.get(f"{self._base}{path}", params=params)
-        return self._handle(r)
+        return self._handle(self._send("GET", path, params=params))
 
     def _post(self, path: str, json: Any) -> Any:
-        with httpx.Client(headers=self._headers) as c:
-            r = c.post(f"{self._base}{path}", json=json)
-        return self._handle(r)
+        return self._handle(self._send("POST", path, json=json))
 
     def _patch(self, path: str, json: Any) -> Any:
-        with httpx.Client(headers=self._headers) as c:
-            r = c.patch(f"{self._base}{path}", json=json)
-        return self._handle(r)
+        return self._handle(self._send("PATCH", path, json=json))
 
     def download_export(self, dest: Path) -> int:
         """Stream the full registry export (a zip) to `dest`; returns its size in bytes."""
@@ -106,6 +132,11 @@ class ArtifactumClient:
             raise AuthError(
                 "Invalid or missing API key. It may have been revoked: "
                 "make a new one in Settings, then run `atfm init`."
+            )
+        if r.status_code == 429:
+            raise ArtifactumError(
+                "The server is rate limiting this account (too many requests in a short time), and it "
+                "didn't let up. Wait a few minutes, or publish less often."
             )
         if r.status_code == 403:
             # e.g. publishing with a read-only key: the server says which key and why

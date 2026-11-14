@@ -32,6 +32,8 @@ class FakeServer:
     down: bool = False
     # Set to answer like the real server does for a read-only API key: reads work, writes 403
     read_only_key: str | None = None
+    # Answer this many requests with 429 (rate limited) before serving normally again
+    rate_limited: int = 0
     # What the last storage listing / move asked for (yours, or the team's with --team)
     listed_as_team: bool = False
     moved_as_team: bool = False
@@ -62,6 +64,9 @@ class FakeServer:
         self.requests.append(request)
         if self.down:
             return httpx.Response(503, text="Service Unavailable")
+        if self.rate_limited:
+            self.rate_limited -= 1
+            return httpx.Response(429, json={"detail": "Too many requests"}, headers={"Retry-After": "7"})
         if request.headers.get("authorization") != f"Bearer {TOKEN}":
             return httpx.Response(401, json={"detail": "Invalid token"})
         path, method = request.url.path, request.method

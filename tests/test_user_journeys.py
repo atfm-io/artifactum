@@ -221,3 +221,25 @@ def test_a_read_only_key_says_so_when_publishing(registry: Registry, tmp_path: P
     registry.server.read_only_key = "CI"
     with pytest.raises(AuthError, match='The API key "CI" is read-only'):
         artifactum.publish(write(tmp_path / "out.csv", "x\n"))
+
+
+def test_a_rate_limited_publish_waits_and_succeeds(registry: Registry, tmp_path: Path, monkeypatch, capsys) -> None:
+    from artifactum import client
+
+    waits: list[float] = []
+    monkeypatch.setattr(client, "_sleep", waits.append)
+    registry.server.rate_limited = 2
+    artifact_id = artifactum.publish(write(tmp_path / "out.csv", "x\n"))
+    assert artifact_id in registry.server.artifacts
+    assert waits == [7.0, 7.0]  # as long as the server asked (Retry-After), each time
+    assert "rate limiting this account; retrying in 7s" in capsys.readouterr().err
+
+
+def test_a_publish_gives_up_if_the_rate_limit_never_lifts(registry: Registry, tmp_path: Path, monkeypatch) -> None:
+    from artifactum import client
+
+    monkeypatch.setattr(client, "_sleep", lambda s: None)
+    monkeypatch.setattr(client, "MAX_RATE_LIMIT_WAIT", 20.0)
+    registry.server.rate_limited = 100
+    with pytest.raises(ArtifactumError, match="rate limiting this account"):
+        artifactum.publish(write(tmp_path / "out.csv", "x\n"))
