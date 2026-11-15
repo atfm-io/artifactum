@@ -185,7 +185,9 @@ def test_a_team_admin_moves_the_teams_files(registry: Registry, tmp_path: Path) 
     assert result.exit_code == 0, result.stderr
     assert registry.server.listed_as_team and registry.server.moved_as_team
     out = flat(result.stdout)
-    assert "Moved 2 artifacts" in out and f"atfm storage move {shared}" in out  # what to tell teammates
+    assert "Moved 2 artifacts" in out
+    # What to tell teammates: one unbroken line, however long the path, so it copies whole
+    assert f"    atfm storage move {shared}" in result.stdout.splitlines()
 
     # Without --team, only your own files are asked for
     (tmp_path / "back").mkdir()

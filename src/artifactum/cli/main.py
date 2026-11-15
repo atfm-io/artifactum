@@ -58,10 +58,14 @@ def storage_move(location: str, team: bool = False) -> None:
     )
     console.print(f"  The old copies in {moved.old} are untouched; delete them once you're happy.")
     if team:
+        import shlex
+
         console.print(
-            f"  Ask your teammates to run [bold]atfm storage move {location}[/bold] too. Their files are"
-            " already there, so it just points their setup at the new location."
+            "  Ask your teammates to run this too. Their files are already there, so it just points their"
+            " setup at the new location:"
         )
+        # On its own line and never wrapped, so it can be copied whole however narrow the terminal
+        console.print(f"    atfm storage move {shlex.quote(location)}", soft_wrap=True, markup=False, highlight=False)
 
 
 def browse() -> None:
