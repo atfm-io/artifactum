@@ -1,0 +1,18 @@
+# Dependency updates. Python dependencies are ranges in pyproject.toml (it's a library) and pinned
+# for development in pixi.lock, which Dependabot can't update, so Python only gets security fixes.
+# Commit prefixes follow Conventional Commits for release-please: security fixes release, CI doesn't.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+    commit-message: { prefix: "fix", include: scope }
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message: { prefix: "ci", include: scope }
