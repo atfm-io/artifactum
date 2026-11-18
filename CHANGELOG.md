@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/atfm-io/artifactum/compare/v0.5.0...v0.5.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **cli:** print the teammates' storage move command on one unbroken line ([36814a8](https://github.com/atfm-io/artifactum/commit/36814a8bbe5f14cf20457b266d07ec25b53b574c))
+
 ## [0.5.0](https://github.com/atfm-io/artifactum/compare/v0.4.0...v0.5.0) (2026-11-14)
 
 
